@@ -18,9 +18,7 @@ npm run build
 會輸出到 `dist/` 目錄，可直接部署到靜態網站伺服器。
 
 ## GitHub Pages 發佈
-
 專案已附上 `.github/workflows/deploy.yml` 並在 Vite 設定 `base: "/Proxmox_xyz/"`，確保產生的資源路徑符合 GitHub Pages 子路徑，實際部署網址為 https://jason5545.github.io/Proxmox_xyz/ 。只要：
-
 1. 將程式碼推送到 GitHub，確保預設分支為 `main`。
 2. 在 GitHub Repository 的 **Settings → Pages** 啟用「Build and deployment: GitHub Actions」。
 3. 之後每次推送到 `main`，CI 會自動建置並釋出到 GitHub Pages。
