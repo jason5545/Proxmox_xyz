@@ -26,3 +26,7 @@ npm run build
 3. 之後每次推送到 `main`，CI 會自動建置並釋出到 GitHub Pages。
 
 如需手動觸發，也可在 GitHub 的 **Actions** 分頁使用 `Run workflow`。
+
+## 自訂預設報告內容
+
+應用程式載入時會從 `src/content/initial-report.md` 匯入預設 Markdown。若要換成自己的範本，只要編輯這個檔案，或替換為其他 `.md` 檔並調整 `src/constants/report.js` 中的匯入路徑即可。
