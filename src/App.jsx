@@ -286,8 +286,15 @@ function slugify(text) {
 function extractToc(md) {
   const lines = md.split("\n");
   const items = [];
-  for (const line of lines) {
-    const m = /^(#{1,4})\s+(.+)$/.exec(line.trim());
+  let inCodeBlock = false;
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (line.startsWith("```") || line.startsWith("~~~")) {
+      inCodeBlock = !inCodeBlock;
+      continue;
+    }
+    if (inCodeBlock) continue;
+    const m = /^(#{1,4})\s+(.+)$/.exec(line);
     if (m) {
       const depth = m[1].length; // 1..4
       const title = m[2].replace(/`/g, "");
@@ -337,6 +344,8 @@ function runSelfTests() {
     push("slugify 中文+英數", slugify("測試 Test 123") === "測試-test-123");
     const toc = extractToc(["# A", "", "## B", "### C"].join("\n"));
     push("extractToc length", toc.length === 3, JSON.stringify(toc));
+    const tocWithCode = extractToc(["```", "# not heading", "```", "## Real"].join("\n"));
+    push("extractToc ignore code fences", tocWithCode.length === 1 && tocWithCode[0].id === "real", JSON.stringify(tocWithCode));
     // 基本輸出測試（不驗證完整 HTML，只驗證可轉換且非空）
     const bodyHtml = marked.parse("# T\n\n**bold**\n\n```bash\necho ok\n```");
     push("marked parse non-empty", typeof bodyHtml === "string" && bodyHtml.length > 0);
