@@ -831,7 +831,7 @@ function runSelfTests() {
 }
 
 export default function ReportSite() {
-  const [title, setTitle] = useLocalStorage("msfs_report_title", TITLE_DEFAULT);
+  const title = TITLE_DEFAULT;
   const markdown = INITIAL_MD;
   const [dark, setDark] = useLocalStorage("msfs_report_dark", "1");
 
@@ -948,12 +948,9 @@ export default function ReportSite() {
       <div className="sticky top-0 z-10 backdrop-blur-xl bg-white/80 dark:bg-gray-900/80 border-b border-neutral-200/50 dark:border-neutral-800/50 shadow-lg dark:shadow-gray-900/30">
         <div className="mx-auto max-w-[1400px] px-4 py-4 flex items-center gap-3">
           <motion.div initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} className="flex items-center gap-2 grow">
-            <input
-              value={title}
-              onChange={(e)=>setTitle(e.target.value)}
-              className="w-full max-w-[720px] bg-transparent outline-none text-lg font-bold text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600"
-              aria-label="文件標題"
-            />
+            <h1 className="text-lg font-bold text-gray-800 dark:text-gray-100">
+              {title}
+            </h1>
           </motion.div>
           <div className="flex items-center gap-2">
             <button
