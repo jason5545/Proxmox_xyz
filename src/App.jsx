@@ -246,26 +246,29 @@ function extractToc(md) {
 
 function CodeBlock({children}) {
   const text = String(children);
-  const btnRef = useRef(null);
+  const [copied, setCopied] = useState(false);
+
   return (
     <div className="group relative">
-      <pre className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 overflow-x-auto text-sm bg-gray-50 dark:bg-gray-800/50 text-gray-800 dark:text-gray-200">
-        <code>{text}</code>
+      <pre className="rounded-2xl border border-gray-200/50 dark:border-gray-700/50 p-5 overflow-x-auto text-sm bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-900/50 dark:to-gray-800/30 text-gray-800 dark:text-gray-200 shadow-lg dark:shadow-gray-900/50 backdrop-blur-sm">
+        <code className="font-mono">{text}</code>
       </pre>
       <button
-        ref={btnRef}
         onClick={() => {
           navigator.clipboard.writeText(text).then(() => {
-            if (btnRef.current) {
-              btnRef.current.innerText = "已複製";
-              setTimeout(() => (btnRef.current.innerText = "複製"), 1200);
-            }
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
           });
         }}
-        className="absolute top-2 right-2 hidden group-hover:flex items-center gap-1 rounded-lg border border-gray-300 dark:border-gray-600 px-2 py-1 text-xs bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm"
-        title="複製"
+        className={`absolute top-3 right-3 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-all backdrop-blur-md ${
+          copied
+            ? "bg-green-500/90 text-white border border-green-400/50"
+            : "bg-white/80 dark:bg-gray-800/80 border border-gray-300/50 dark:border-gray-600/50 opacity-0 group-hover:opacity-100"
+        }`}
+        title={copied ? "已複製" : "複製程式碼"}
       >
-        <Clipboard size={14} /> 複製
+        <Clipboard size={14} className={copied ? "animate-bounce" : ""} />
+        {copied ? "已複製!" : "複製"}
       </button>
     </div>
   );
@@ -342,7 +345,11 @@ export default function ReportSite() {
 
   const components = {
     code({inline, children}) {
-      if (inline) return <code className="px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200">{children}</code>;
+      if (inline) return (
+        <code className="px-1.5 py-0.5 mx-0.5 rounded-lg bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 text-blue-800 dark:text-blue-200 font-medium text-sm">
+          {children}
+        </code>
+      );
       return <CodeBlock>{children}</CodeBlock>;
     },
     h1({children}) {
@@ -373,8 +380,24 @@ export default function ReportSite() {
       );
     },
     a({href, children}) {
-      return <a href={href} target="_blank" rel="noreferrer" className="underline decoration-dotted hover:decoration-solid">{children}</a>;
-    }
+      return (
+        <a
+          href={href}
+          target="_blank"
+          rel="noreferrer"
+          className="text-blue-600 dark:text-blue-400 underline decoration-2 decoration-blue-300 dark:decoration-blue-600 underline-offset-2 hover:decoration-blue-500 dark:hover:decoration-blue-400 transition-all hover:text-blue-700 dark:hover:text-blue-300"
+        >
+          {children}
+        </a>
+      );
+    },
+    blockquote({children}) {
+      return (
+        <blockquote className="border-l-4 border-orange-400 dark:border-orange-300 pl-4 py-2 my-4 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-r-xl italic">
+          {children}
+        </blockquote>
+      );
+    },
   };
 
   // 初次載入時執行一次自測並在主控台輸出
@@ -389,50 +412,54 @@ export default function ReportSite() {
   }, []);
 
   return (
-    <div className={`min-h-screen ${isDark ? "bg-neutral-950 text-neutral-100" : "bg-neutral-50 text-neutral-900"}`}>
+    <div className={`min-h-screen transition-colors duration-300 ${isDark ? "bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 text-neutral-100" : "bg-gradient-to-br from-gray-50 via-white to-gray-100 text-neutral-900"}`}>
       {/* Top Bar */}
-      <div className="sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-neutral-900/60 border-b border-neutral-200 dark:border-neutral-800">
-        <div className="mx-auto max-w-[1400px] px-4 py-3 flex items-center gap-3">
+      <div className="sticky top-0 z-10 backdrop-blur-xl bg-white/80 dark:bg-neutral-900/80 border-b border-neutral-200/50 dark:border-neutral-800/50 shadow-lg dark:shadow-gray-900/30">
+        <div className="mx-auto max-w-[1400px] px-4 py-4 flex items-center gap-3">
           <motion.div initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} className="flex items-center gap-2 grow">
             <input
               value={title}
               onChange={(e)=>setTitle(e.target.value)}
-              className="w-full max-w-[720px] bg-transparent outline-none text-lg font-semibold"
+              className="w-full max-w-[720px] bg-transparent outline-none text-lg font-bold text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600"
               aria-label="文件標題"
             />
           </motion.div>
           <div className="flex items-center gap-2">
             <button
               onClick={()=>setDark(isDark?"0":"1")}
-              className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 dark:border-neutral-700 px-3 py-1.5"
+              className="inline-flex items-center gap-2 rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur border border-neutral-300/50 dark:border-neutral-700/50 px-3 py-2 hover:bg-white/70 dark:hover:bg-gray-800/70 transition-all shadow-md"
               title={isDark?"切到淺色":"切到深色"}
             >
               {isDark ? <SunMedium size={16}/> : <Moon size={16}/>}{" "}<span className="hidden sm:inline">{isDark?"淺色":"深色"}</span>
             </button>
             <button
               onClick={()=>setEdit(isEdit?"0":"1")}
-              className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 dark:border-neutral-700 px-3 py-1.5"
+              className={`inline-flex items-center gap-2 rounded-xl backdrop-blur border px-3 py-2 transition-all shadow-md ${
+                isEdit
+                  ? "bg-blue-500/80 dark:bg-blue-600/80 text-white border-blue-400/50 dark:border-blue-500/50"
+                  : "bg-white/50 dark:bg-gray-800/50 border-neutral-300/50 dark:border-neutral-700/50 hover:bg-white/70 dark:hover:bg-gray-800/70"
+              }`
               title="切換編輯模式"
             >
               <FilePenLine size={16}/>{" "}<span className="hidden sm:inline">{isEdit?"閱讀":"編輯"}</span>
             </button>
             <button
               onClick={exportMarkdown}
-              className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 dark:border-neutral-700 px-3 py-1.5"
+              className="inline-flex items-center gap-2 rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur border border-neutral-300/50 dark:border-neutral-700/50 px-3 py-2 hover:bg-white/70 dark:hover:bg-gray-800/70 transition-all shadow-md"
               title="匯出 Markdown"
             >
               <FileDown size={16}/>{" "}<span className="hidden sm:inline">MD</span>
             </button>
             <button
               onClick={exportHtml}
-              className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 dark:border-neutral-700 px-3 py-1.5"
+              className="inline-flex items-center gap-2 rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur border border-neutral-300/50 dark:border-neutral-700/50 px-3 py-2 hover:bg-white/70 dark:hover:bg-gray-800/70 transition-all shadow-md"
               title="匯出靜態 HTML"
             >
               <Download size={16}/>{" "}<span className="hidden sm:inline">HTML</span>
             </button>
             <button
               onClick={resetToInitial}
-              className="inline-flex items-center gap-2 rounded-xl border border-red-200 dark:border-red-900 px-3 py-1.5 text-red-600 dark:text-red-300"
+              className="inline-flex items-center gap-2 rounded-xl bg-red-50/50 dark:bg-red-900/20 backdrop-blur border border-red-300/50 dark:border-red-700/50 px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-100/50 dark:hover:bg-red-900/30 transition-all shadow-md"
               title="還原為初稿"
             >
               <RotateCcw size={16}/>{" "}<span className="hidden sm:inline">還原</span>
@@ -443,7 +470,7 @@ export default function ReportSite() {
                 const ok = results.every(r => r.pass);
                 alert((ok ? "✅ 自我檢查通過" : "⚠️ 自我檢查有失敗") + "\n\n" + results.map(r => `${r.pass ? 'PASS' : 'FAIL'} - ${r.name}${r.extra ? ' -> ' + r.extra : ''}`).join('\n'));
               }}
-              className="inline-flex items-center gap-2 rounded-xl border border-emerald-300 dark:border-emerald-700 px-3 py-1.5"
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-50/50 dark:bg-emerald-900/20 backdrop-blur border border-emerald-300/50 dark:border-emerald-700/50 px-3 py-2 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100/50 dark:hover:bg-emerald-900/30 transition-all shadow-md"
               title="執行自我測試（slugify / extractToc / marked）"
             >
               <BugPlay size={16}/>{" "}<span className="hidden sm:inline">自我檢查</span>
@@ -454,20 +481,27 @@ export default function ReportSite() {
 
       {/* Body */}
       <div className="mx-auto max-w-[1400px] px-4">
-        <div className="grid grid-cols-1 lg:grid-cols-[280px,1fr] gap-6 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[300px,1fr] gap-6 py-6">
           {/* TOC */}
           <aside className="lg:sticky lg:top-[64px] h-max">
-            <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4">
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-sm font-semibold tracking-wide uppercase">目錄</h2>
+            <div className="rounded-2xl bg-white/60 dark:bg-gray-900/60 backdrop-blur-md border border-neutral-200/50 dark:border-neutral-800/50 p-5 shadow-xl dark:shadow-gray-900/50">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-bold tracking-wide uppercase text-gray-600 dark:text-gray-400">目錄</h2>
                 <label className="inline-flex items-center gap-2 text-xs cursor-pointer">
                   <input type="checkbox" className="accent-neutral-900" onChange={(e)=>setEdit(e.target.checked?"1":"0")} checked={isEdit} /> 編輯
                 </label>
               </div>
-              <nav className="space-y-1 text-sm">
+              <nav className="space-y-1 text-sm max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
                 {toc.map((t, idx) => (
-                  <a key={idx} href={`#${t.id}`} className={`block truncate hover:underline ${t.depth===1?"pl-0 font-medium":""} ${t.depth===2?"pl-2":""} ${t.depth===3?"pl-4":""} ${t.depth===4?"pl-6":""}`}>
-                    {t.title}
+                  <a key={idx} href={`#${t.id}`} className={`block truncate py-1 px-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all ${
+                    t.depth===1?"font-bold text-gray-800 dark:text-gray-100":""} ${
+                    t.depth===2?"pl-4 text-gray-700 dark:text-gray-300":""} ${
+                    t.depth===3?"pl-6 text-gray-600 dark:text-gray-400":""} ${
+                    t.depth===4?"pl-8 text-gray-500 dark:text-gray-500":""}`}>
+                    <span className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                      {t.depth > 1 && <span className="opacity-40 mr-1">{'›'.repeat(t.depth - 1)}</span>}
+                      {t.title}
+                    </span>
                   </a>
                 ))}
               </nav>
@@ -479,11 +513,11 @@ export default function ReportSite() {
                   accept=".md, text/markdown, text/plain"
                   onChange={(e)=> e.target.files?.[0] && onImportFile(e.target.files[0])}
                   className="hidden"/>
-                <button onClick={()=>fileInputRef.current?.click()} className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 dark:border-neutral-700 px-3 py-1.5 text-xs">
+                <button onClick={()=>fileInputRef.current?.click()} className="inline-flex items-center gap-2 rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur border border-neutral-300/50 dark:border-neutral-700/50 px-3 py-1.5 text-xs hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all">
                   <Upload size={14}/> 匯入 MD
                 </button>
-                <button onClick={()=>window.print()} className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 dark:border-neutral-700 px-3 py-1.5 text-xs">
-                  列印 / 存成 PDF
+                <button onClick={()=>window.print()} className="inline-flex items-center gap-2 rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur border border-neutral-300/50 dark:border-neutral-700/50 px-3 py-1.5 text-xs hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all">
+                  列印 / PDF
                 </button>
               </div>
             </div>
@@ -492,23 +526,30 @@ export default function ReportSite() {
           {/* Main */}
           <main>
             {isEdit ? (
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 <textarea
                   value={markdown}
                   onChange={(e)=>setMarkdown(e.target.value)}
-                  className="min-h-[70vh] w-full rounded-2xl border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 font-mono text-sm"
+                  className="min-h-[70vh] w-full rounded-2xl border border-neutral-300/50 dark:border-neutral-700/50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-5 font-mono text-sm shadow-lg dark:shadow-gray-900/50 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 resize-none scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700"
                   spellCheck={false}
+                  placeholder="在此輸入 Markdown 內容..."
                 />
-                <article className="prose prose-neutral dark:prose-invert max-w-none">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]} components={components}>
-                    {markdown}
-                  </ReactMarkdown>
-                </article>
+                <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-2xl border border-neutral-300/50 dark:border-neutral-700/50 p-8 shadow-lg dark:shadow-gray-900/50 overflow-y-auto max-h-[80vh] scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
+                  <article className="prose prose-neutral dark:prose-invert max-w-none prose-lg">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]} components={components}>
+                      {markdown}
+                    </ReactMarkdown>
+                  </article>
+                </div>
               </div>
             ) : (
-              <article className="prose prose-neutral dark:prose-invert max-w-none">
-                <h1 className="mb-0">{title}</h1>
-                <p className="mt-1 text-sm opacity-70">此頁可離線保存、再次載入與持續編輯。支援導出 <strong>Markdown</strong> 與 <strong>靜態 HTML</strong>。</p>
+              <article className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-2xl p-8 md:p-12 shadow-xl dark:shadow-gray-900/50 prose prose-neutral dark:prose-invert max-w-none prose-lg">
+                <h1 className="mb-2 text-4xl md:text-5xl font-black bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+                  {title}
+                </h1>
+                <p className="mt-2 text-base text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                  💾 此頁可離線保存、再次載入與持續編輯。支援匯出 <strong className="text-blue-600 dark:text-blue-400">Markdown</strong> 與 <strong className="text-purple-600 dark:text-purple-400">靜態 HTML</strong>
+                </p>
                 <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]} components={components}>
                   {markdown}
                 </ReactMarkdown>
