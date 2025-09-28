@@ -14,7 +14,7 @@ import { marked } from "marked";
 // -----------------------------
 
 const STORAGE_KEY = "msfs_report_markdown_v1";
-const TITLE_DEFAULT = "MSFS on Proxmox with GPU Passthrough — 實戰報告（jason5545）";
+const TITLE_DEFAULT = "從 DXGI 崩潰到 97% 效能 — Proxmox VFIO 終極最佳化實錄（jason5545）";
 
 // 使用陣列 join，避免模板字面值中含有反引號(`)造成語法錯誤
 const INITIAL_MD = [
@@ -55,6 +55,7 @@ const INITIAL_MD = [
   '- **9/26**：發佈 **最終整合指南**：從 Host 到 VM 的系統化優化與除錯；指出**超頻**為崩潰誘因、完成**核心綁定**與**驅動切換自動化**；GPU 利用率達 ~97%。另補 **`nvidia-drm.modeset=0`** 的說明與步驟。同時確認 BIOS 中 **Resizable BAR 設為 OFF**。',
   '- **9/27 晚間**：新增 **NVIDIA 驅動相關黑名單**優化設定，包含 `nvidia_modeset`、`nvidia_uvm`、`nvidia_drm` 等模組黑名單，以確保 VFIO 與 NVIDIA 驅動之間的穩定切換。',
   '- **9/28**：開始進行 **PMDG 777F 長程測試航班**（東京羽田 RJTT → 杜拜 OMDB），驗證系統在高負載長時間運作下的穩定性與效能表現。',
+  '- **9/27 長程飛行測試發現**：在 **PMDG 777F** 長程測試中發現，只要觸發遊戲暫停選單，相對容易觸發 **VFIO reset/restore bar** 問題。目前正在進行 **移除 hookscript** 的測試，以驗證是否為 hookscript 邏輯導致的不穩定因素。',
   '',
   '---',
   '',
