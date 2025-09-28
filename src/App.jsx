@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, {useEffect, useMemo, useRef, useState} from "react";
+import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
@@ -283,10 +283,109 @@ function slugify(text) {
     .replace(/^-+|-+$/g, "");
 }
 
+// 增強的 TOC 提取函數，支援更多 Markdown 格式
+function extractTocAdvanced(md) {
+  if (!md || typeof md !== 'string') return [];
+
+  const lines = md.split('\n');
+  const items = [];
+  let inCodeBlock = false;
+  let codeBlockFence = '';
+  let inHtmlBlock = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const rawLine = lines[i];
+    const line = rawLine.trim();
+
+    // 處理程式碼區塊（支援 ```, ~~~, 和縮排程式碼）
+    if (!inCodeBlock && (line.startsWith('```') || line.startsWith('~~~'))) {
+      inCodeBlock = true;
+      codeBlockFence = line.slice(0, 3);
+      continue;
+    }
+
+    if (inCodeBlock && line.startsWith(codeBlockFence)) {
+      inCodeBlock = false;
+      codeBlockFence = '';
+      continue;
+    }
+
+    // 跳過程式碼區塊和縮排程式碼區塊
+    if (inCodeBlock || rawLine.startsWith('    ') || rawLine.startsWith('\t')) {
+      continue;
+    }
+
+    // 處理 HTML 標題標籤
+    const htmlHeadingMatch = line.match(/^<(h[1-6])(?:\s[^>]*)?>(.+?)<\/h[1-6]>/i);
+    if (htmlHeadingMatch) {
+      const level = parseInt(htmlHeadingMatch[1].charAt(1));
+      if (level <= 4) {
+        const title = htmlHeadingMatch[2].replace(/<[^>]*>/g, '').replace(/`/g, '').trim();
+        if (title) {
+          const id = slugify(title);
+          items.push({ depth: level, title, id, line: i + 1 });
+        }
+      }
+      continue;
+    }
+
+    // 處理 Markdown 標題（#）
+    const markdownMatch = line.match(/^(#{1,6})\s+(.+)$/);
+    if (markdownMatch) {
+      const depth = markdownMatch[1].length;
+      if (depth <= 4) {
+        // 清理標題文字：移除內嵌程式碼、連結、粗體等標記
+        let title = markdownMatch[2]
+          .replace(/`([^`]+)`/g, '$1')  // 移除內嵌程式碼標記
+          .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')  // 移除連結，保留文字
+          .replace(/\*\*([^*]+)\*\*/g, '$1')  // 移除粗體標記
+          .replace(/\*([^*]+)\*/g, '$1')  // 移除斜體標記
+          .replace(/~~([^~]+)~~/g, '$1')  // 移除刪除線標記
+          .trim();
+
+        if (title) {
+          const id = slugify(title);
+          items.push({ depth, title, id, line: i + 1 });
+        }
+      }
+      continue;
+    }
+
+    // 處理 Setext 標題（底線式）
+    if (i < lines.length - 1) {
+      const nextLine = lines[i + 1].trim();
+      if (line && (nextLine.match(/^=+$/) || nextLine.match(/^-+$/))) {
+        const depth = nextLine.startsWith('=') ? 1 : 2;
+        if (depth <= 4) {
+          let title = line
+            .replace(/`([^`]+)`/g, '$1')
+            .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
+            .replace(/\*\*([^*]+)\*\*/g, '$1')
+            .replace(/\*([^*]+)\*/g, '$1')
+            .trim();
+
+          if (title) {
+            const id = slugify(title);
+            items.push({ depth, title, id, line: i + 1 });
+          }
+        }
+        i++; // 跳過底線
+        continue;
+      }
+    }
+  }
+
+  return items;
+}
+
+// 相容性：保持原函數名稱，暫時使用簡單版本
 function extractToc(md) {
+  if (!md || typeof md !== 'string') return [];
+
   const lines = md.split("\n");
   const items = [];
   let inCodeBlock = false;
+
   for (const rawLine of lines) {
     const line = rawLine.trim();
     if (line.startsWith("```") || line.startsWith("~~~")) {
@@ -304,6 +403,356 @@ function extractToc(md) {
   }
   return items;
 }
+
+// useToc hook：分離 TOC 邏輯和狀態管理
+function useToc(markdown) {
+  const toc = useMemo(() => {
+    try {
+      return extractTocAdvanced(markdown);
+    } catch (error) {
+      console.warn('TOC 提取失敗:', error);
+      return [];
+    }
+  }, [markdown]);
+
+  const scrollToElement = useCallback((id, options = {}) => {
+    try {
+      const element = document.getElementById(id);
+      if (element) {
+        element.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+          ...options
+        });
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.warn('滾動到元素失敗:', error);
+      return false;
+    }
+  }, []);
+
+  return { toc, scrollToElement };
+}
+
+// useActiveSection hook：追蹤可視區域中的活動標題
+function useActiveSection(toc) {
+  const [activeId, setActiveId] = useState('');
+  const observerRef = useRef(null);
+
+  useEffect(() => {
+    if (!toc || toc.length === 0) {
+      setActiveId('');
+      return;
+    }
+
+    // 延遲執行，確保 DOM 已渲染
+    const timeoutId = setTimeout(() => {
+      // 清理之前的 observer
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+
+      // 建立新的 Intersection Observer
+      const observerOptions = {
+        root: null,
+        rootMargin: '-20% 0px -70% 0px',
+        threshold: [0, 0.25, 0.5, 0.75, 1]
+      };
+
+      const observer = new IntersectionObserver((entries) => {
+        const visibleEntries = entries.filter(entry => entry.isIntersecting);
+
+        if (visibleEntries.length > 0) {
+          const topEntry = visibleEntries.reduce((top, entry) => {
+            return entry.boundingClientRect.top < top.boundingClientRect.top ? entry : top;
+          });
+
+          setActiveId(topEntry.target.id);
+        }
+      }, observerOptions);
+
+      observerRef.current = observer;
+
+      // 觀察所有標題元素
+      const headingElements = toc.map(item => document.getElementById(item.id)).filter(Boolean);
+
+      if (headingElements.length > 0) {
+        headingElements.forEach(el => observer.observe(el));
+
+        // 初始設定
+        const currentVisible = headingElements.find(el => {
+          const rect = el.getBoundingClientRect();
+          return rect.top >= 0 && rect.top <= window.innerHeight * 0.3;
+        });
+
+        if (currentVisible) {
+          setActiveId(currentVisible.id);
+        } else {
+          setActiveId(headingElements[0].id);
+        }
+      }
+    }, 100); // 延遲 100ms 確保 DOM 渲染完成
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [toc]);
+
+  return activeId;
+}
+
+// TOC 樣式系統：統一管理層級樣式
+const tocStyles = {
+  // 基本容器樣式
+  container: {
+    base: "rounded-2xl bg-white/60 dark:bg-gray-900/60 backdrop-blur-md border border-neutral-200/50 dark:border-neutral-800/50 p-5 shadow-xl dark:shadow-gray-900/50",
+    sticky: "lg:sticky lg:top-[64px] h-max"
+  },
+
+  // 標題樣式
+  header: "text-sm font-bold tracking-wide uppercase text-gray-600 dark:text-gray-400",
+
+  // 導航容器樣式
+  nav: "space-y-1 text-sm max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700",
+
+  // 項目基礎樣式
+  item: {
+    base: "w-full text-left block truncate py-1 px-2 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50",
+    hover: "hover:bg-blue-50 dark:hover:bg-blue-900/30",
+    active: "bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300",
+    inactive: ""
+  },
+
+  // 層級特定樣式
+  depth: {
+    1: {
+      text: "font-bold text-gray-800 dark:text-gray-100",
+      padding: "",
+      prefix: ""
+    },
+    2: {
+      text: "text-gray-700 dark:text-gray-300",
+      padding: "pl-4",
+      prefix: "›"
+    },
+    3: {
+      text: "text-gray-600 dark:text-gray-400",
+      padding: "pl-6",
+      prefix: "››"
+    },
+    4: {
+      text: "text-gray-500 dark:text-gray-500",
+      padding: "pl-8",
+      prefix: "›››"
+    }
+  }
+};
+
+// 生成項目樣式的輔助函數
+function getTocItemClasses(depth, isActive) {
+  const baseClasses = `${tocStyles.item.base} ${tocStyles.item.hover}`;
+  const stateClasses = isActive ? tocStyles.item.active : tocStyles.item.inactive;
+  const depthClasses = tocStyles.depth[depth] ?
+    `${tocStyles.depth[depth].text} ${tocStyles.depth[depth].padding}` :
+    tocStyles.depth[4].text;
+
+  return `${baseClasses} ${stateClasses} ${depthClasses}`.trim();
+}
+
+// TocItem 元件：封裝單一目錄項目的邏輯和可存取性
+const TocItem = React.memo(function TocItem({
+  item,
+  isActive,
+  onNavigate,
+  index,
+  totalItems
+}) {
+  const handleClick = useCallback((e) => {
+    e.preventDefault();
+    if (onNavigate) {
+      const success = onNavigate(item.id);
+      if (!success) {
+        console.warn(`無法導航到標題: ${item.title} (${item.id})`);
+      }
+    }
+  }, [item.id, item.title, onNavigate]);
+
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleClick(e);
+    }
+  }, [handleClick]);
+
+  const depthStyle = tocStyles.depth[item.depth] || tocStyles.depth[4];
+  const prefix = depthStyle.prefix;
+
+  return (
+    <button
+      type="button"
+      className={getTocItemClasses(item.depth, isActive)}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      aria-current={isActive ? 'location' : undefined}
+      aria-label={`導航到 ${item.title}${item.line ? `，第 ${item.line} 行` : ''}`}
+      title={`點選跳轉到: ${item.title}`}
+      role="link"
+      tabIndex={0}
+      data-toc-index={index}
+      data-toc-depth={item.depth}
+      data-toc-id={item.id}
+    >
+      <span className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+        {prefix && (
+          <span className="opacity-40 mr-1" aria-hidden="true">
+            {prefix}
+          </span>
+        )}
+        <span className={isActive ? 'font-medium' : ''}>{item.title}</span>
+      </span>
+    </button>
+  );
+});
+
+// TocContainer 元件：完整的 TOC 容器，整合所有功能
+const TocContainer = React.memo(function TocContainer({
+  markdown,
+  className = '',
+  showPrintButton = true,
+  maxHeight = '60vh',
+  title = '目錄'
+}) {
+  const { toc, scrollToElement } = useToc(markdown);
+  const activeId = useActiveSection(toc);
+  const [error, setError] = useState(null);
+
+  // 錯誤邊界處理
+  useEffect(() => {
+    if (!markdown) {
+      setError('無 Markdown 內容');
+      return;
+    }
+    // 只有在 markdown 存在但 TOC 為空時才視為錯誤
+    if (markdown && toc.length === 0) {
+      // 延遲檢查，給 TOC 提取時間
+      const timeoutId = setTimeout(() => {
+        if (toc.length === 0) {
+          setError('未找到標題');
+        }
+      }, 200);
+      return () => clearTimeout(timeoutId);
+    }
+    setError(null);
+  }, [markdown, toc]);
+
+  const handleNavigate = useCallback((id) => {
+    try {
+      return scrollToElement(id);
+    } catch (error) {
+      console.error('導航錯誤:', error);
+      setError('導航失敗');
+      return false;
+    }
+  }, [scrollToElement]);
+
+  const handlePrint = useCallback(() => {
+    try {
+      window.print();
+    } catch (error) {
+      console.error('列印錯誤:', error);
+      alert('列印功能不可用');
+    }
+  }, []);
+
+  // 鍵盤導航支援
+  const handleContainerKeyDown = useCallback((e) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+
+      const buttons = Array.from(e.currentTarget.querySelectorAll('button[data-toc-index]'));
+      const currentIndex = buttons.findIndex(btn => btn === document.activeElement);
+
+      let nextIndex;
+      if (e.key === 'ArrowDown') {
+        nextIndex = currentIndex < buttons.length - 1 ? currentIndex + 1 : 0;
+      } else {
+        nextIndex = currentIndex > 0 ? currentIndex - 1 : buttons.length - 1;
+      }
+
+      if (buttons[nextIndex]) {
+        buttons[nextIndex].focus();
+      }
+    }
+  }, []);
+
+  if (!toc || toc.length === 0) {
+    return (
+      <aside className={`${tocStyles.container.sticky} ${className}`}>
+        <div className={tocStyles.container.base}>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className={tocStyles.header}>{title}</h2>
+          </div>
+          <div className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+            {error || '載入中...'}
+          </div>
+        </div>
+      </aside>
+    );
+  }
+
+  return (
+    <aside className={`${tocStyles.container.sticky} ${className}`}>
+      <div className={tocStyles.container.base}>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className={tocStyles.header}>{title}</h2>
+          <span className="text-xs text-gray-400 dark:text-gray-500">
+            {toc.length} 項
+          </span>
+        </div>
+
+        <nav
+          className={tocStyles.nav}
+          style={{ maxHeight }}
+          onKeyDown={handleContainerKeyDown}
+          role="navigation"
+          aria-label="文件目錄導航"
+        >
+          {toc.map((item, index) => (
+            <TocItem
+              key={`${item.id}-${index}`}
+              item={item}
+              isActive={activeId === item.id}
+              onNavigate={handleNavigate}
+              index={index}
+              totalItems={toc.length}
+            />
+          ))}
+        </nav>
+
+        {showPrintButton && (
+          <>
+            <hr className="my-3 border-neutral-200 dark:border-neutral-800"/>
+            <div className="flex justify-center">
+              <button
+                onClick={handlePrint}
+                className="inline-flex items-center gap-2 rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur border border-neutral-300/50 dark:border-neutral-700/50 px-3 py-1.5 text-xs hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all"
+                title="列印或匯出 PDF"
+                aria-label="列印或匯出 PDF"
+              >
+                列印 / PDF
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </aside>
+  );
+});
 
 function CodeBlock({children}) {
   const text = String(children);
@@ -361,9 +810,6 @@ export default function ReportSite() {
   const [dark, setDark] = useLocalStorage("msfs_report_dark", "1");
 
   const isDark = dark === "1";
-
-  const toc = useMemo(() => extractToc(markdown), [markdown]);
-
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
@@ -514,42 +960,8 @@ export default function ReportSite() {
       {/* Body */}
       <div className="mx-auto max-w-[1400px] px-4">
         <div className="grid grid-cols-1 lg:grid-cols-[300px,1fr] gap-6 py-6">
-          {/* TOC */}
-          <aside className="lg:sticky lg:top-[64px] h-max">
-            <div className="rounded-2xl bg-white/60 dark:bg-gray-900/60 backdrop-blur-md border border-neutral-200/50 dark:border-neutral-800/50 p-5 shadow-xl dark:shadow-gray-900/50">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-bold tracking-wide uppercase text-gray-600 dark:text-gray-400">目錄</h2>
-              </div>
-              <nav className="space-y-1 text-sm max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
-                {toc.map((t, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => {
-                      const element = document.getElementById(t.id);
-                      if (element) {
-                        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      }
-                    }}
-                    className={`w-full text-left block truncate py-1 px-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all ${
-                    t.depth===1?"font-bold text-gray-800 dark:text-gray-100":""} ${
-                    t.depth===2?"pl-4 text-gray-700 dark:text-gray-300":""} ${
-                    t.depth===3?"pl-6 text-gray-600 dark:text-gray-400":""} ${
-                    t.depth===4?"pl-8 text-gray-500 dark:text-gray-500":""}`}>
-                    <span className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                      {t.depth > 1 && <span className="opacity-40 mr-1">{'›'.repeat(t.depth - 1)}</span>}
-                      {t.title}
-                    </span>
-                  </button>
-                ))}
-              </nav>
-              <hr className="my-3 border-neutral-200 dark:border-neutral-800"/>
-              <div className="flex justify-center">
-                <button onClick={()=>window.print()} className="inline-flex items-center gap-2 rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur border border-neutral-300/50 dark:border-neutral-700/50 px-3 py-1.5 text-xs hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all">
-                  列印 / PDF
-                </button>
-              </div>
-            </div>
-          </aside>
+          {/* TOC - 使用重構後的 TocContainer */}
+          <TocContainer markdown={markdown} title="目錄" />
 
           {/* Main */}
           <main>
