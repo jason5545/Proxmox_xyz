@@ -412,9 +412,9 @@ export default function ReportSite() {
   }, []);
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${isDark ? "bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 text-neutral-100" : "bg-gradient-to-br from-gray-50 via-white to-gray-100 text-neutral-900"}`}>
+    <div className="min-h-screen transition-colors duration-300 bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 text-neutral-900 dark:text-neutral-100">
       {/* Top Bar */}
-      <div className="sticky top-0 z-10 backdrop-blur-xl bg-white/80 dark:bg-neutral-900/80 border-b border-neutral-200/50 dark:border-neutral-800/50 shadow-lg dark:shadow-gray-900/30">
+      <div className="sticky top-0 z-10 backdrop-blur-xl bg-white/80 dark:bg-gray-900/80 border-b border-neutral-200/50 dark:border-neutral-800/50 shadow-lg dark:shadow-gray-900/30">
         <div className="mx-auto max-w-[1400px] px-4 py-4 flex items-center gap-3">
           <motion.div initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} className="flex items-center gap-2 grow">
             <input
