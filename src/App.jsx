@@ -273,6 +273,28 @@ function useLocalStorage(key, initial) {
   return [state, setState];
 }
 
+// 遞迴提取 ReactMarkdown children 的純文字內容
+function extractTextFromChildren(children) {
+  if (typeof children === 'string') {
+    return children;
+  }
+
+  if (Array.isArray(children)) {
+    return children.map(extractTextFromChildren).join('');
+  }
+
+  if (children && typeof children === 'object') {
+    if (children.props && children.props.children) {
+      return extractTextFromChildren(children.props.children);
+    }
+    if (children.props && typeof children.props.value === 'string') {
+      return children.props.value;
+    }
+  }
+
+  return '';
+}
+
 function slugify(text) {
   return text
     .toLowerCase()
@@ -790,10 +812,14 @@ function runSelfTests() {
   try {
     push("slugify basic", slugify("Hello World") === "hello-world");
     push("slugify 中文+英數", slugify("測試 Test 123") === "測試-test-123");
+    push("slugify 括號處理", slugify("時間線（重點事件）") === "時間線重點事件");
     const toc = extractToc(["# A", "", "## B", "### C"].join("\n"));
     push("extractToc length", toc.length === 3, JSON.stringify(toc));
     const tocWithCode = extractToc(["```", "# not heading", "```", "## Real"].join("\n"));
     push("extractToc ignore code fences", tocWithCode.length === 1 && tocWithCode[0].id === "real", JSON.stringify(tocWithCode));
+    // 測試括號標題提取
+    const tocWithParens = extractToc("## 時間線（重點事件）");
+    push("extractToc 括號標題", tocWithParens.length === 1 && tocWithParens[0].id === "時間線重點事件", JSON.stringify(tocWithParens));
     // 基本輸出測試（不驗證完整 HTML，只驗證可轉換且非空）
     const bodyHtml = marked.parse("# T\n\n**bold**\n\n```bash\necho ok\n```");
     push("marked parse non-empty", typeof bodyHtml === "string" && bodyHtml.length > 0);
@@ -848,7 +874,7 @@ export default function ReportSite() {
       return <CodeBlock>{children}</CodeBlock>;
     },
     h1({children}) {
-      const text = String(children?.[0] ?? "");
+      const text = extractTextFromChildren(children);
       const id = slugify(text);
       return (
         <h1 id={id} className="scroll-mt-24 text-3xl font-bold tracking-tight">
@@ -857,7 +883,7 @@ export default function ReportSite() {
       );
     },
     h2({children}) {
-      const text = String(children?.[0] ?? "");
+      const text = extractTextFromChildren(children);
       const id = slugify(text);
       return (
         <h2 id={id} className="scroll-mt-24 text-2xl font-semibold mt-8">
@@ -866,7 +892,7 @@ export default function ReportSite() {
       );
     },
     h3({children}) {
-      const text = String(children?.[0] ?? "");
+      const text = extractTextFromChildren(children);
       const id = slugify(text);
       return (
         <h3 id={id} className="scroll-mt-24 text-xl font-semibold mt-6">
@@ -875,7 +901,7 @@ export default function ReportSite() {
       );
     },
     h4({children}) {
-      const text = String(children?.[0] ?? "");
+      const text = extractTextFromChildren(children);
       const id = slugify(text);
       return (
         <h4 id={id} className="scroll-mt-24 text-lg font-semibold mt-4">
