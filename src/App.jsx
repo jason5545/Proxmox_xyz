@@ -2,7 +2,6 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import rehypeSlug from "rehype-slug";
 import { motion } from "framer-motion";
 import { Download, Moon, SunMedium, FileDown, Clipboard, BugPlay } from "lucide-react";
 import { marked } from "marked";
@@ -408,7 +407,7 @@ function extractToc(md) {
 function useToc(markdown) {
   const toc = useMemo(() => {
     try {
-      return extractTocAdvanced(markdown);
+      return extractToc(markdown); // 使用簡單穩定的版本
     } catch (error) {
       console.warn('TOC 提取失敗:', error);
       return [];
@@ -875,6 +874,15 @@ export default function ReportSite() {
         </h3>
       );
     },
+    h4({children}) {
+      const text = String(children?.[0] ?? "");
+      const id = slugify(text);
+      return (
+        <h4 id={id} className="scroll-mt-24 text-lg font-semibold mt-4">
+          {children}
+        </h4>
+      );
+    },
     a({href, children}) {
       return (
         <a
@@ -972,7 +980,7 @@ export default function ReportSite() {
               <p className="mt-2 text-base text-gray-600 dark:text-gray-400 flex items-center gap-2">
                 📄 MSFS on Proxmox with GPU Passthrough 技術報告。支援匯出 <strong className="text-blue-600 dark:text-blue-400">Markdown</strong> 與 <strong className="text-purple-600 dark:text-purple-400">靜態 HTML</strong>
               </p>
-              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]} components={components}>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
                 {markdown}
               </ReactMarkdown>
             </article>
