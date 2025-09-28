@@ -277,9 +277,10 @@ function useLocalStorage(key, initial) {
 function slugify(text) {
   return text
     .toLowerCase()
-    .replace(/[^a-z0-9\u4e00-\u9fa5\s-]/g, "")
+    .replace(/[^a-z0-9\u4e00-\u9fa5\s\-\(\)]/g, "")
     .trim()
-    .replace(/\s+/g, "-");
+    .replace(/[\s\(\)]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 function extractToc(md) {
@@ -512,7 +513,15 @@ export default function ReportSite() {
               </div>
               <nav className="space-y-1 text-sm max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
                 {toc.map((t, idx) => (
-                  <a key={idx} href={`#${t.id}`} className={`block truncate py-1 px-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all ${
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      const element = document.getElementById(t.id);
+                      if (element) {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
+                    }}
+                    className={`w-full text-left block truncate py-1 px-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all ${
                     t.depth===1?"font-bold text-gray-800 dark:text-gray-100":""} ${
                     t.depth===2?"pl-4 text-gray-700 dark:text-gray-300":""} ${
                     t.depth===3?"pl-6 text-gray-600 dark:text-gray-400":""} ${
@@ -521,7 +530,7 @@ export default function ReportSite() {
                       {t.depth > 1 && <span className="opacity-40 mr-1">{'›'.repeat(t.depth - 1)}</span>}
                       {t.title}
                     </span>
-                  </a>
+                  </button>
                 ))}
               </nav>
               <hr className="my-3 border-neutral-200 dark:border-neutral-800"/>
