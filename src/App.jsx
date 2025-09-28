@@ -438,7 +438,7 @@ export default function ReportSite() {
                 isEdit
                   ? "bg-blue-500/80 dark:bg-blue-600/80 text-white border-blue-400/50 dark:border-blue-500/50"
                   : "bg-white/50 dark:bg-gray-800/50 border-neutral-300/50 dark:border-neutral-700/50 hover:bg-white/70 dark:hover:bg-gray-800/70"
-              }`
+              }`}
               title="切換編輯模式"
             >
               <FilePenLine size={16}/>{" "}<span className="hidden sm:inline">{isEdit?"閱讀":"編輯"}</span>
