@@ -277,10 +277,10 @@ function useLocalStorage(key, initial) {
 function slugify(text) {
   return text
     .toLowerCase()
-    .replace(/[^a-z0-9\u4e00-\u9fa5\s\-\(\)]/g, "")
+    .replace(/[^\u4e00-\u9fa5a-z0-9\s\-]/g, "") // 移除括號和其他特殊字元
     .trim()
-    .replace(/[\s\(\)]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .replace(/\s+/g, "-") // 將空格轉為連字號
+    .replace(/^-+|-+$/g, ""); // 移除開頭和結尾的連字號
 }
 
 // 增強的 TOC 提取函數，支援更多 Markdown 格式
