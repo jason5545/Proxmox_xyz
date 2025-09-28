@@ -4,14 +4,14 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
 import { motion } from "framer-motion";
-import { Download, FilePenLine, Moon, SunMedium, RotateCcw, Upload, FileDown, Clipboard, BugPlay } from "lucide-react";
+import { Download, Moon, SunMedium, FileDown, Clipboard, BugPlay } from "lucide-react";
 import { marked } from "marked";
 
 // -----------------------------
-// 可編輯單頁網站 for jason5545 的 MSFS 報告
-// - 左側 TOC 導覽、右側 Markdown 內容
-// - 支援「編輯模式」(雙欄：左編右看)、本機自動儲存、導出 MD/HTML
-// - Tailwind 風格、深色模式、代碼塊一鍵複製
+// MSFS on Proxmox with GPU Passthrough 技術報告展示頁面
+// - 左側 TOC 導覽、右側 Markdown 內容展示
+// - 支援深色模式、程式碼區塊一鍵複製、匯出 MD/HTML
+// - 現代化玻璃效果設計、響應式布局
 // -----------------------------
 
 const STORAGE_KEY = "msfs_report_markdown_v1";
@@ -294,26 +294,18 @@ function runSelfTests() {
 
 export default function ReportSite() {
   const [title, setTitle] = useLocalStorage("msfs_report_title", TITLE_DEFAULT);
-  const [markdown, setMarkdown] = useLocalStorage(STORAGE_KEY, INITIAL_MD);
+  const markdown = INITIAL_MD;
   const [dark, setDark] = useLocalStorage("msfs_report_dark", "1");
-  const [edit, setEdit] = useLocalStorage("msfs_report_edit", "0");
 
   const isDark = dark === "1";
-  const isEdit = edit === "1";
 
   const toc = useMemo(() => extractToc(markdown), [markdown]);
 
-  const fileInputRef = useRef(null);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
   }, [isDark]);
 
-  const resetToInitial = () => {
-    if (confirm("確定要還原為初始報告內容？此動作無法復原。")) {
-      setMarkdown(INITIAL_MD);
-    }
-  };
 
   const download = (filename, content, type = "text/plain") => {
     const blob = new Blob([content], { type });
@@ -327,21 +319,16 @@ export default function ReportSite() {
     URL.revokeObjectURL(url);
   };
 
-  const exportMarkdown = () => download("msfs-proxmox-report.md", markdown, "text/markdown;charset=utf-8");
+  const exportMarkdown = () => download("msfs-proxmox-report.md", INITIAL_MD, "text/markdown;charset=utf-8");
 
   const exportHtml = () => {
     // 以 marked 預先轉為靜態 HTML，並內嵌極簡樣式，得到真正「單檔可部署」的網頁
-    const bodyHtml = marked.parse(markdown);
+    const bodyHtml = marked.parse(INITIAL_MD);
     const css = `:root{color-scheme: light dark}body{margin:0;padding:2rem;max-width:980px;margin-inline:auto;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji"}a{color:inherit}pre{overflow:auto;background:#0b1020;color:#e6e6e6;padding:1rem;border-radius:12px}code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace}.prose h1{font-size:2rem;margin-top:1.25rem}.prose h2{font-size:1.5rem;margin-top:1.25rem}.prose h3{font-size:1.25rem;margin-top:1rem}blockquote{padding:.5rem 1rem;border-left:4px solid #999;background:#f7f7f7;border-radius:8px}hr{border:none;border-top:1px solid #ddd;margin:2rem 0}table{border-collapse:collapse}th,td{border:1px solid #ccc;padding:.5rem;border-radius:4px}`;
     const html = `<!doctype html><html lang="zh-Hant-TW"><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>${title}</title><style>${css}</style><body class="prose"><article>${bodyHtml}</article></body></html>`;
     download("msfs-proxmox-report.html", html, "text/html;charset=utf-8");
   };
 
-  const onImportFile = (file) => {
-    const reader = new FileReader();
-    reader.onload = () => setMarkdown(String(reader.result || ""));
-    reader.readAsText(file);
-  };
 
   const components = {
     code({inline, children}) {
@@ -433,17 +420,6 @@ export default function ReportSite() {
               {isDark ? <SunMedium size={16}/> : <Moon size={16}/>}{" "}<span className="hidden sm:inline">{isDark?"淺色":"深色"}</span>
             </button>
             <button
-              onClick={()=>setEdit(isEdit?"0":"1")}
-              className={`inline-flex items-center gap-2 rounded-xl backdrop-blur border px-3 py-2 transition-all shadow-md ${
-                isEdit
-                  ? "bg-blue-500/80 dark:bg-blue-600/80 text-white border-blue-400/50 dark:border-blue-500/50"
-                  : "bg-white/50 dark:bg-gray-800/50 border-neutral-300/50 dark:border-neutral-700/50 hover:bg-white/70 dark:hover:bg-gray-800/70"
-              }`}
-              title="切換編輯模式"
-            >
-              <FilePenLine size={16}/>{" "}<span className="hidden sm:inline">{isEdit?"閱讀":"編輯"}</span>
-            </button>
-            <button
               onClick={exportMarkdown}
               className="inline-flex items-center gap-2 rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur border border-neutral-300/50 dark:border-neutral-700/50 px-3 py-2 hover:bg-white/70 dark:hover:bg-gray-800/70 transition-all shadow-md"
               title="匯出 Markdown"
@@ -456,13 +432,6 @@ export default function ReportSite() {
               title="匯出靜態 HTML"
             >
               <Download size={16}/>{" "}<span className="hidden sm:inline">HTML</span>
-            </button>
-            <button
-              onClick={resetToInitial}
-              className="inline-flex items-center gap-2 rounded-xl bg-red-50/50 dark:bg-red-900/20 backdrop-blur border border-red-300/50 dark:border-red-700/50 px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-100/50 dark:hover:bg-red-900/30 transition-all shadow-md"
-              title="還原為初稿"
-            >
-              <RotateCcw size={16}/>{" "}<span className="hidden sm:inline">還原</span>
             </button>
             <button
               onClick={() => {
@@ -487,9 +456,6 @@ export default function ReportSite() {
             <div className="rounded-2xl bg-white/60 dark:bg-gray-900/60 backdrop-blur-md border border-neutral-200/50 dark:border-neutral-800/50 p-5 shadow-xl dark:shadow-gray-900/50">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-bold tracking-wide uppercase text-gray-600 dark:text-gray-400">目錄</h2>
-                <label className="inline-flex items-center gap-2 text-xs cursor-pointer">
-                  <input type="checkbox" className="accent-neutral-900" onChange={(e)=>setEdit(e.target.checked?"1":"0")} checked={isEdit} /> 編輯
-                </label>
               </div>
               <nav className="space-y-1 text-sm max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
                 {toc.map((t, idx) => (
@@ -506,16 +472,7 @@ export default function ReportSite() {
                 ))}
               </nav>
               <hr className="my-3 border-neutral-200 dark:border-neutral-800"/>
-              <div className="flex items-center justify-between">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".md, text/markdown, text/plain"
-                  onChange={(e)=> e.target.files?.[0] && onImportFile(e.target.files[0])}
-                  className="hidden"/>
-                <button onClick={()=>fileInputRef.current?.click()} className="inline-flex items-center gap-2 rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur border border-neutral-300/50 dark:border-neutral-700/50 px-3 py-1.5 text-xs hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all">
-                  <Upload size={14}/> 匯入 MD
-                </button>
+              <div className="flex justify-center">
                 <button onClick={()=>window.print()} className="inline-flex items-center gap-2 rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur border border-neutral-300/50 dark:border-neutral-700/50 px-3 py-1.5 text-xs hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all">
                   列印 / PDF
                 </button>
@@ -525,36 +482,17 @@ export default function ReportSite() {
 
           {/* Main */}
           <main>
-            {isEdit ? (
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <textarea
-                  value={markdown}
-                  onChange={(e)=>setMarkdown(e.target.value)}
-                  className="min-h-[70vh] w-full rounded-2xl border border-neutral-300/50 dark:border-neutral-700/50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-5 font-mono text-sm shadow-lg dark:shadow-gray-900/50 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 resize-none scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700"
-                  spellCheck={false}
-                  placeholder="在此輸入 Markdown 內容..."
-                />
-                <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-2xl border border-neutral-300/50 dark:border-neutral-700/50 p-8 shadow-lg dark:shadow-gray-900/50 overflow-y-auto max-h-[80vh] scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
-                  <article className="prose prose-neutral dark:prose-invert max-w-none prose-lg">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]} components={components}>
-                      {markdown}
-                    </ReactMarkdown>
-                  </article>
-                </div>
-              </div>
-            ) : (
-              <article className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-2xl p-8 md:p-12 shadow-xl dark:shadow-gray-900/50 prose prose-neutral dark:prose-invert max-w-none prose-lg">
-                <h1 className="mb-2 text-4xl md:text-5xl font-black bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
-                  {title}
-                </h1>
-                <p className="mt-2 text-base text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                  💾 此頁可離線保存、再次載入與持續編輯。支援匯出 <strong className="text-blue-600 dark:text-blue-400">Markdown</strong> 與 <strong className="text-purple-600 dark:text-purple-400">靜態 HTML</strong>
-                </p>
-                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]} components={components}>
-                  {markdown}
-                </ReactMarkdown>
-              </article>
-            )}
+            <article className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-2xl p-8 md:p-12 shadow-xl dark:shadow-gray-900/50 prose prose-neutral dark:prose-invert max-w-none prose-lg">
+              <h1 className="mb-2 text-4xl md:text-5xl font-black bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+                {title}
+              </h1>
+              <p className="mt-2 text-base text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                📄 MSFS on Proxmox with GPU Passthrough 技術報告。支援匯出 <strong className="text-blue-600 dark:text-blue-400">Markdown</strong> 與 <strong className="text-purple-600 dark:text-purple-400">靜態 HTML</strong>
+              </p>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]} components={components}>
+                {markdown}
+              </ReactMarkdown>
+            </article>
           </main>
         </div>
       </div>
