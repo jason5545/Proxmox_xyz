@@ -14,7 +14,7 @@ import { marked } from "marked";
 // -----------------------------
 
 const STORAGE_KEY = "msfs_report_markdown_v1";
-const TITLE_DEFAULT = "從 DXGI 崩潰到 97% 效能 — Proxmox VFIO 終極最佳化實錄（jason5545）";
+const TITLE_DEFAULT = "從 DXGI 錯誤到 97% 效能 — Proxmox VFIO 終極最佳化實錄（jason5545）";
 
 // 使用陣列 join，避免模板字面值中含有反引號(`)造成語法錯誤
 const INITIAL_MD = [
@@ -29,7 +29,7 @@ const INITIAL_MD = [
   '- **最終結論**：',
   '  1) 先解決 **GPU reset / rebind** 穩定性（以 **softdep** 取代過度黑名單、搭配 **hookscript** 做 pre-start/unbind 與 post-stop/rescan/rebind）。',
   '  2) VM 效能主因為 **Ryzen 9950X3D 的非對稱 CCD 排程**：將遊戲執行緒固定到 **V-Cache CCD**（core pinning + NUMA）。',
-  '  3) 觸發崩潰的直接因素是 **顯卡超頻**；移除後穩定。`rombar=0` 在本案**非必要**。',
+  '  3) 觸發錯誤的直接因素是 **顯卡超頻**；移除後穩定。`rombar=0` 在本案**非必要**。',
   '',
   '完成後 **GPU 利用率由 ~30% 提升至 ~97%**、VM 啟停穩定。',
   '',
@@ -52,7 +52,7 @@ const INITIAL_MD = [
   '- **8/9**：發佈 **NUT 延遲關機策略**與管理腳本 `nut-delay-manager.sh`，將「斷電即關」改為「定時延後關」。',
   '- **8/9**：音訊回饋：以 **Apollo**，聲音驅動會自動切到 **Steam Streaming**，實測無爆音。',
   '- **8/10**：貼 **`upsc`** 量測數據（1500VA/900W，當下負載 ~17%），討論鉛酸電池壽命與放電策略。',
-  '- **9/26**：發佈 **最終整合指南**：從 Host 到 VM 的系統化優化與除錯；指出**超頻**為崩潰誘因、完成**核心綁定**與**驅動切換自動化**；GPU 利用率達 ~97%。另補 **`nvidia-drm.modeset=0`** 的說明與步驟。同時確認 BIOS 中 **Resizable BAR 設為 OFF**。',
+  '- **9/26**：發佈 **最終整合指南**：從 Host 到 VM 的系統化優化與除錯；指出**超頻**為錯誤誘因、完成**核心綁定**與**驅動切換自動化**；GPU 利用率達 ~97%。另補 **`nvidia-drm.modeset=0`** 的說明與步驟。同時確認 BIOS 中 **Resizable BAR 設為 OFF**。',
   '- **9/27 晚間**：新增 **NVIDIA 驅動相關黑名單**優化設定，包含 `nvidia_modeset`、`nvidia_uvm`、`nvidia_drm` 等模組黑名單，以確保 VFIO 與 NVIDIA 驅動之間的穩定切換。',
   '- **9/28**：開始進行 **PMDG 777F 長程測試航班**（東京羽田 RJTT → 杜拜 OMDB），驗證系統在高負載長時間運作下的穩定性與效能表現。',
   '- **9/28 長程飛行測試發現**：在 **PMDG 777F** 長程測試中發現，只要觸發遊戲暫停選單，相對容易觸發 **VFIO reset/restore bar** 問題。目前正在進行 **移除 hookscript** 的測試，以驗證是否為 hookscript 邏輯導致的不穩定因素。',
@@ -153,10 +153,10 @@ const INITIAL_MD = [
   '- 磁碟：VirtIO 開 `discard=on` 與 `iothread=1`。',
   '',
   '**超頻設定與穩定性**：',
-  '- 初期問題：過度超頻導致 DXGI_ERROR_DEVICE_HUNG 崩潰',
+  '- 初期問題：過度超頻導致 DXGI_ERROR_DEVICE_HUNG 錯誤',
   '- **目前穩定參數**：Core +110 MHz (使用 VF TUNER)、Memory +400 MHz',
   '- 調整方式：漸進式降低超頻幅度，直到系統穩定運作',
-  '- **`rombar=0` 結論**：實測真正崩潰誘因是超頻過度，調整後不須 `rombar=0` 亦穩定',
+  '- **`rombar=0` 結論**：實測真正錯誤誘因是超頻過度，調整後不須 `rombar=0` 亦穩定',
   '- 除錯順序：**先** 檢查超頻/溫度/驅動版本/外掛，**後** 再考慮 `rombar=0` 等低階繞法。',
   '',
   '---',
@@ -250,7 +250,7 @@ const INITIAL_MD = [
   '---',
   '',
   '## 成果與建議',
-  '- **成果**：完成 VM 啟停穩定（解決 pci_irq_handler 相關崩潰），**GPU 利用率 ~97%**，體感接近裸機。',
+  '- **成果**：完成 VM 啟停穩定（解決 pci_irq_handler 相關錯誤），**GPU 利用率 ~97%**，體感接近裸機。',
   '- **長程穩定性驗證**：',
   '  - **9/28 測試航班**：PMDG 777F（東京羽田 RJTT → 杜拜 OMDB），航程約 9 小時',
   '  - **測試目的**：驗證系統在高負載、長時間運作下的穩定性',
