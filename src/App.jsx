@@ -950,7 +950,7 @@ export default function ReportSite() {
     <div className="min-h-screen transition-colors duration-300 bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 text-neutral-900 dark:text-neutral-100">
       {/* Top Bar */}
       <div className="sticky top-0 z-10 backdrop-blur-xl bg-white/80 dark:bg-gray-900/80 border-b border-neutral-200/50 dark:border-neutral-800/50 shadow-lg dark:shadow-gray-900/30">
-        <div className="mx-auto max-w-[1400px] px-4 py-4 flex items-center gap-3">
+        <div className="mx-auto max-w-[1920px] px-6 py-4 flex items-center gap-3">
           <motion.div initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} className="flex items-center gap-2 grow">
             <h1 className="text-lg font-bold text-gray-800 dark:text-gray-100">
               {title}
@@ -994,14 +994,14 @@ export default function ReportSite() {
       </div>
 
       {/* Body */}
-      <div className="mx-auto max-w-[1400px] px-4">
-        <div className="grid grid-cols-1 lg:grid-cols-[300px,1fr] gap-6 py-6">
+      <div className="mx-auto max-w-[1920px] px-6">
+        <div className="grid grid-cols-1 xl:grid-cols-[320px,1fr] 2xl:grid-cols-[360px,1fr] gap-8 py-6">
           {/* TOC - 使用重構後的 TocContainer */}
           <TocContainer markdown={markdown} title="目錄" />
 
           {/* Main */}
           <main>
-            <article className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-2xl p-8 md:p-12 shadow-xl dark:shadow-gray-900/50 prose prose-neutral dark:prose-invert max-w-none prose-lg">
+            <article className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-2xl p-8 md:p-10 lg:p-12 xl:p-14 2xl:p-16 shadow-xl dark:shadow-gray-900/50 prose prose-neutral dark:prose-invert max-w-none prose-lg xl:prose-xl">
               <h1 className="mb-2 text-4xl md:text-5xl font-black bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
                 {title}
               </h1>
