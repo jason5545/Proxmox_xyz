@@ -14,11 +14,11 @@ import { marked } from "marked";
 // -----------------------------
 
 const STORAGE_KEY = "msfs_report_markdown_v1";
-const TITLE_DEFAULT = "從 DXGI 錯誤到 97% 效能 — Proxmox VFIO 終極最佳化實錄（jason5545）";
+const TITLE_DEFAULT = "從 DXGI 錯誤到 97% 效能 — Proxmox VFIO 終極最佳化實錄";
 
 // 使用陣列 join，避免模板字面值中含有反引號(`)造成語法錯誤
 const INITIAL_MD = [
-  '# 你的 LowEndTalk 討論整理報告（jason5545）',
+  '# 你的 LowEndTalk 討論整理報告',
   '',
   '> 主題：**MSFS on Proxmox with GPU Passthrough (DXGI HANG) — $100 Bounty**',
   '',
