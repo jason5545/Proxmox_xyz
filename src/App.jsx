@@ -3,7 +3,7 @@ import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { motion } from "framer-motion";
-import { Download, Moon, SunMedium, FileDown, Clipboard, BugPlay } from "lucide-react";
+import { Download, Moon, SunMedium, FileDown, Clipboard, BugPlay, Calendar, CheckCircle2, AlertCircle, Zap } from "lucide-react";
 import { marked } from "marked";
 
 // -----------------------------
@@ -382,6 +382,210 @@ const INITIAL_MD = [
   '  3) 持續以 **lm-sensors**、**NUT**、**UPS** 監控運維，維持長期穩定；',
   '  4) 定期進行長程測試航班，確保系統在真實使用情境下的可靠性。',
 ].join('\n');
+
+// 時間線事件數據
+const TIMELINE_EVENTS = [
+  {
+    date: '7/24',
+    title: '發起懸賞求助',
+    content: '說明 DXGI HANG 與環境細節。',
+    type: 'milestone',
+    icon: AlertCircle
+  },
+  {
+    date: '8/3',
+    title: '遠端串流顯示輸出',
+    content: '使用 GLKVM 取代實體螢幕/HDMI 假負載，便於遠端與 BIOS 存取。',
+    type: 'feature',
+    icon: Zap
+  },
+  {
+    date: '8/6',
+    title: 'lm-sensors 修復',
+    content: '發佈 lm-sensors 修復報告（nct6775 force_id=0xd802）使風扇/溫度監控正常，並做永久化設定。',
+    type: 'fix',
+    icon: CheckCircle2
+  },
+  {
+    date: '8/9',
+    title: 'NUT 延遲關機策略',
+    content: '發佈 NUT 延遲關機策略與管理腳本 nut-delay-manager.sh，將「斷電即關」改為「定時延後關」。',
+    type: 'feature',
+    icon: Zap
+  },
+  {
+    date: '8/9',
+    title: '音訊回饋',
+    content: '以 Apollo，聲音驅動會自動切到 Steam Streaming，實測無爆音。',
+    type: 'test',
+    icon: CheckCircle2
+  },
+  {
+    date: '8/10',
+    title: 'UPS 量測數據',
+    content: '貼 upsc 量測數據（1500VA/900W，當下負載 ~17%），討論鉛酸電池壽命與放電策略。',
+    type: 'test',
+    icon: Calendar
+  },
+  {
+    date: '9/25',
+    title: 'GRUB 與 BIOS ASPM 設定',
+    content: '新增 GRUB 參數調整與 BIOS ASPM 設定：在 GRUB 中加入 pcie_aspm=off 參數停用 PCIe 主動狀態電源管理，同時在 BIOS 中將 ASPM 設為 OFF，進一步改善 GPU 直通穩定性。',
+    type: 'feature',
+    icon: Zap
+  },
+  {
+    date: '9/26',
+    title: '最終整合指南',
+    content: '發佈最終整合指南：從 Host 到 VM 的系統化優化與除錯；指出超頻為錯誤誘因、完成核心綁定與驅動切換自動化；GPU 利用率達 ~97%。另補 nvidia-drm.modeset=0 的說明與步驟。同時確認 BIOS 中 Resizable BAR 設為 OFF。',
+    type: 'milestone',
+    icon: CheckCircle2
+  },
+  {
+    date: '9/27 晚間',
+    title: 'NVIDIA 驅動黑名單優化',
+    content: '新增 NVIDIA 驅動相關黑名單優化設定，包含 nvidia_modeset、nvidia_uvm、nvidia_drm 等模組黑名單，以確保 VFIO 與 NVIDIA 驅動之間的穩定切換。',
+    type: 'feature',
+    icon: Zap
+  },
+  {
+    date: '9/28',
+    title: '長程測試航班',
+    content: '開始進行 PMDG 777F 長程測試航班（東京羽田 RJTT → 杜拜 OMDB），驗證系統在高負載長時間運作下的穩定性與效能表現。',
+    type: 'test',
+    icon: Calendar
+  },
+  {
+    date: '9/28',
+    title: '長程飛行測試發現',
+    content: '在 PMDG 777F 長程測試中發現，只要觸發遊戲暫停選單，相對容易觸發 VFIO reset/restore bar 問題。',
+    details: [
+      '已進一步縮小範圍至 Windows 事件管理器中的 NVIDIA TOPPS 相關錯誤',
+      '根據社群回報，此問題可能與顯示記憶體管理有關',
+      '經測試確認 hookscript 並非問題來源，問題仍在持續追查中',
+      'OCCT 穩定性測試：使用 OCCT 進行 80% 顯示記憶體壓力測試，經過 40 多輪測試後顯示沒有異常，確認顯示記憶體本身穩定',
+      'memtest86+ 測試：系統記憶體測試通過（PASS），確認記憶體穩定性無虞'
+    ],
+    type: 'issue',
+    icon: AlertCircle
+  },
+  {
+    date: '9/29',
+    title: '進階測試發現',
+    content: '問題呈現明顯的時間依賴特性，系統穩定運作約一小時後，觸發遊戲暫停選單時才會誘發 VFIO reset/restore bar 錯誤，根本原因持續追蹤中。',
+    type: 'issue',
+    icon: AlertCircle
+  },
+];
+
+// Timeline 組件
+const Timeline = React.memo(function Timeline({ events }) {
+  const typeColors = {
+    milestone: 'from-purple-500 to-pink-500',
+    feature: 'from-blue-500 to-cyan-500',
+    fix: 'from-green-500 to-emerald-500',
+    test: 'from-yellow-500 to-orange-500',
+    issue: 'from-red-500 to-orange-500'
+  };
+
+  const typeBgColors = {
+    milestone: 'bg-purple-500/10 dark:bg-purple-500/20 border-purple-500/30',
+    feature: 'bg-blue-500/10 dark:bg-blue-500/20 border-blue-500/30',
+    fix: 'bg-green-500/10 dark:bg-green-500/20 border-green-500/30',
+    test: 'bg-yellow-500/10 dark:bg-yellow-500/20 border-yellow-500/30',
+    issue: 'bg-red-500/10 dark:bg-red-500/20 border-red-500/30'
+  };
+
+  return (
+    <div className="relative py-6">
+      {/* 垂直時間線 */}
+      <div className="absolute left-6 md:left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-500/50 via-purple-500/50 to-pink-500/50" />
+
+      {events.map((event, index) => {
+        const Icon = event.icon || Calendar;
+        const gradientColor = typeColors[event.type] || typeColors.milestone;
+        const bgColor = typeBgColors[event.type] || typeBgColors.milestone;
+
+        return (
+          <motion.div
+            key={`${event.date}-${index}`}
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{
+              duration: 0.5,
+              delay: index * 0.05,
+              ease: [0.22, 1, 0.36, 1]
+            }}
+            className="relative pl-16 md:pl-20 pb-10 last:pb-0 group"
+          >
+            {/* 時間線圓點與圖標 */}
+            <motion.div
+              initial={{ scale: 0 }}
+              whileInView={{ scale: 1 }}
+              viewport={{ once: true }}
+              transition={{
+                duration: 0.4,
+                delay: index * 0.05 + 0.2,
+                type: "spring",
+                stiffness: 200
+              }}
+              className="absolute left-3 md:left-5 top-2"
+            >
+              <div className={`relative w-6 h-6 md:w-8 md:h-8 rounded-full bg-gradient-to-br ${gradientColor} p-1 shadow-lg group-hover:shadow-xl transition-shadow duration-300`}>
+                <div className="w-full h-full rounded-full bg-white dark:bg-gray-900 flex items-center justify-center">
+                  <Icon className={`w-3 h-3 md:w-4 md:h-4 bg-gradient-to-br ${gradientColor} bg-clip-text text-transparent`} style={{ WebkitTextFillColor: 'transparent' }} />
+                </div>
+              </div>
+              {/* 光暈效果 */}
+              <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${gradientColor} opacity-20 blur-sm group-hover:opacity-40 transition-opacity duration-300`} />
+            </motion.div>
+
+            {/* 內容卡片 */}
+            <motion.div
+              whileHover={{ y: -2 }}
+              className={`rounded-2xl ${bgColor} border backdrop-blur-sm p-5 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300`}
+            >
+              {/* 日期標籤 */}
+              <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r ${gradientColor} text-white text-xs md:text-sm font-bold mb-3 shadow-md`}>
+                <Calendar className="w-3 h-3 md:w-4 md:h-4" />
+                {event.date}
+              </div>
+
+              {/* 標題 */}
+              <h3 className="text-lg md:text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">
+                {event.title}
+              </h3>
+
+              {/* 內容 */}
+              <p className="text-sm md:text-base text-gray-700 dark:text-gray-300 leading-relaxed">
+                {event.content}
+              </p>
+
+              {/* 詳細資訊（如果有） */}
+              {event.details && event.details.length > 0 && (
+                <motion.ul
+                  initial={{ opacity: 0, height: 0 }}
+                  whileInView={{ opacity: 1, height: 'auto' }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.2 }}
+                  className="mt-4 space-y-2 border-t border-gray-200 dark:border-gray-700 pt-4"
+                >
+                  {event.details.map((detail, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
+                      <span className="text-blue-500 mt-1">•</span>
+                      <span>{detail}</span>
+                    </li>
+                  ))}
+                </motion.ul>
+              )}
+            </motion.div>
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+});
 
 function useLocalStorage(key, initial) {
   const [state, setState] = useState(() => {
@@ -950,6 +1154,28 @@ function runSelfTests() {
   return results;
 }
 
+// 分割 Markdown 內容，提取時間線章節
+function splitMarkdownForTimeline(markdown) {
+  const timelineStart = markdown.indexOf('## 時間線（重點事件）');
+
+  if (timelineStart === -1) {
+    return { before: markdown, timeline: null, after: '' };
+  }
+
+  // 找到下一個 h2 標題作為時間線章節的結束
+  const afterTimelineStart = timelineStart + '## 時間線（重點事件）'.length;
+  const nextH2Match = markdown.slice(afterTimelineStart).match(/\n## /);
+  const timelineEnd = nextH2Match
+    ? afterTimelineStart + nextH2Match.index
+    : markdown.length;
+
+  return {
+    before: markdown.slice(0, timelineStart),
+    timeline: markdown.slice(timelineStart, timelineEnd),
+    after: markdown.slice(timelineEnd)
+  };
+}
+
 export default function ReportSite() {
   const title = TITLE_DEFAULT;
   const markdown = INITIAL_MD;
@@ -960,6 +1186,9 @@ export default function ReportSite() {
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
   }, [isDark]);
+
+  // 分割 Markdown 以插入時間線組件
+  const { before, timeline, after } = useMemo(() => splitMarkdownForTimeline(markdown), [markdown]);
 
 
   const download = (filename, content, type = "text/plain") => {
@@ -1124,9 +1353,26 @@ export default function ReportSite() {
               <p className="mt-2 text-base text-gray-600 dark:text-gray-400 flex items-center gap-2">
                 📄 MSFS on Proxmox with GPU Passthrough 技術報告。支援匯出 <strong className="text-blue-600 dark:text-blue-400">Markdown</strong> 與 <strong className="text-purple-600 dark:text-purple-400">靜態 HTML</strong>
               </p>
+
+              {/* 渲染時間線前的內容 */}
               <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
-                {markdown}
+                {before}
               </ReactMarkdown>
+
+              {/* 渲染時間線組件 */}
+              {timeline && (
+                <div id="時間線重點事件" className="scroll-mt-24">
+                  <h2 className="text-2xl font-semibold mt-8 mb-4">時間線（重點事件）</h2>
+                  <Timeline events={TIMELINE_EVENTS} />
+                </div>
+              )}
+
+              {/* 渲染時間線後的內容 */}
+              {after && (
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+                  {after}
+                </ReactMarkdown>
+              )}
             </article>
           </main>
         </div>
