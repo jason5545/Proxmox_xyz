@@ -64,6 +64,7 @@ const INITIAL_MD = [
   - **OCCT 穩定性測試**：使用 OCCT 進行 80% 顯示記憶體壓力測試，經過 40 多輪測試後顯示沒有異常，確認顯示記憶體本身穩定
   - **memtest86+ 測試**：系統記憶體測試通過（PASS），確認記憶體穩定性無虞`,
   '- **9/29 進階測試發現與方案驗證**：問題呈現明顯的時間依賴特性，系統穩定運作約一小時後，觸發遊戲暫停選單時才會誘發 VFIO reset/restore bar 錯誤。經 OCCT 混合負載與單獨 3D+VRAM 測試（持續 33 分鐘）皆運作正常，顯示問題僅在特定遊戲場景下觸發，並非純硬體壓力測試可重現。已測試 Windows Registry DisableIdlePowerManagement 與 NVIDIA Profile Inspector 電源管理設定，兩者皆無效，問題依舊。根本原因持續追蹤中。',
+  '- **9/30 硬體排查完成**：執行完整 PCIe 診斷，確認硬體層面完全正常：錯誤計數全為 0（DevSta: CorrErr- NonFatalErr- FatalErr-）、連結速度 16GT/s（PCIe 4.0 全速）、寬度 x16、無 AER 錯誤記錄。**100% 排除 PCIe Riser 硬體問題**，確認問題根源為虛擬化軟體層（VFIO 與 NVIDIA TOPPS 相容性）。',
   '',
   '---',
   '',
@@ -77,6 +78,7 @@ const INITIAL_MD = [
   '  - ✅ hookscript 正常運作',
   '  - ✅ 顯示記憶體無異常',
   '  - ✅ 基本效能（97% GPU 利用率）',
+  '  - ✅ PCIe 硬體（9/30 驗證：錯誤計數 0、16GT/s x16 全速、無 AER 錯誤）',
   '- **核心問題**：遊戲暫停選單觸發 GPU 電源狀態轉換（P0→P8），VFIO 無法正確處理導致 reset',
   '',
   '### 待測試解決方案',
@@ -587,6 +589,22 @@ const TIMELINE_EVENTS = [
     ],
     type: 'issue',
     icon: AlertCircle
+  },
+  {
+    date: '9/30',
+    title: 'PCIe 硬體排查完成',
+    content: '執行完整 PCIe 診斷，確認硬體層面完全正常。',
+    details: [
+      '✅ PCIe 錯誤計數：全為 0（DevSta: CorrErr- NonFatalErr- FatalErr- UnsupReq-）',
+      '✅ 連結速度：16GT/s（PCIe 4.0 全速）',
+      '✅ 連結寬度：x16（滿寬度）',
+      '✅ AER 錯誤記錄：無異常',
+      '結論：100% 排除 PCIe Riser 硬體問題',
+      '確認問題根源為虛擬化軟體層（VFIO 與 NVIDIA TOPPS 相容性）',
+      '下一步：測試 VM 層級調整（KVM hidden + MSR ignore）'
+    ],
+    type: 'fix',
+    icon: CheckCircle2
   },
 ];
 
