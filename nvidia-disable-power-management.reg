@@ -4,14 +4,10 @@ Windows Registry Editor Version 5.00
 ; 用途：解決 Proxmox VFIO GPU Passthrough 環境下的電源狀態轉換問題
 ; 適用於：Windows 10/11 VM with NVIDIA GPU
 
-; 方法一：針對第一張顯卡 (0000)
+; 針對第一張顯卡 (0000)
 [HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000]
 "DisableDynamicPstate"=dword:00000001
 "PerfLevelSrc"=dword:00003333
-
-; 方法二：全域設定（備用）
-[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\GraphicsDrivers]
-"DisableIdlePowerManagement"=dword:00000001
 
 ; 使用說明：
 ; 1. 下載此檔案到 Windows VM
