@@ -53,8 +53,8 @@ const INITIAL_MD = [
   '- **8/9**：音訊回饋：以 **Apollo**，聲音驅動會自動切到 **Steam Streaming**，實測無爆音。',
   '- **8/10**：貼 **`upsc`** 量測數據（1500VA/900W，當下負載 ~17%），討論鉛酸電池壽命與放電策略。',
   '- **9/25**：新增 **GRUB 參數調整**與 **BIOS ASPM 設定**：在 GRUB 中加入 `pcie_aspm=off` 參數停用 PCIe 主動狀態電源管理，同時在 BIOS 中將 ASPM 設為 OFF，進一步改善 GPU 直通穩定性。',
-  '- **9/26**：發佈 **最終整合指南**：從 Host 到 VM 的系統化優化與除錯；指出**超頻**為錯誤誘因、完成**核心綁定**與**驅動切換自動化**；GPU 利用率達 ~97%。另補 **`nvidia-drm.modeset=0`** 的說明與步驟。同時確認 BIOS 中 **Resizable BAR 設為 OFF**。',
-  '- **9/27 晚間**：新增 **NVIDIA 驅動相關黑名單**優化設定，包含 `nvidia_modeset`、`nvidia_uvm`、`nvidia_drm` 等模組黑名單，以確保 VFIO 與 NVIDIA 驅動之間的穩定切換。',
+  '- **9/26**：發佈 **最終整合指南**：從 Host 到 VM 的系統化最佳化與除錯；指出**超頻**為錯誤誘因、完成**核心綁定**與**驅動切換自動化**；GPU 利用率達 ~97%。另補 **`nvidia-drm.modeset=0`** 的說明與步驟。同時確認 BIOS 中 **Resizable BAR 設為 OFF**。',
+  '- **9/27 晚間**：新增 **NVIDIA 驅動相關黑名單**最佳化設定，包含 `nvidia_modeset`、`nvidia_uvm`、`nvidia_drm` 等模組黑名單，以確保 VFIO 與 NVIDIA 驅動之間的穩定切換。',
   '- **9/28**：開始進行 **PMDG 777F 長程測試航班**（東京羽田 RJTT → 杜拜 OMDB），驗證系統在高負載長時間運作下的穩定性與效能表現。',
   `- **9/28 長程飛行測試發現**：
   - 在 **PMDG 777F** 長程測試中發現，只要觸發遊戲暫停選單，相對容易觸發 **VFIO reset/restore bar** 問題
@@ -121,7 +121,7 @@ const INITIAL_MD = [
   '',
   '#### 方案四：VM 層級調整',
   '',
-  '**Proxmox 設定檔方式**（推薦）：',
+  '**Proxmox 設定檔方式**（建議）：',
   '```bash',
   '# /etc/pve/qemu-server/100.conf 新增',
   'args: -cpu host,kvm=off',
@@ -151,7 +151,7 @@ const INITIAL_MD = [
   '# 建議優先測試前四個 VM 內部解決方案',
   '```',
   '',
-  '### 推薦測試順序',
+  '### 建議測試順序',
   '',
   '> **前提**：確保已套用 9/25 基礎設定（BIOS ASPM OFF + GRUB `pcie_aspm=off`）',
   '> **現況**：效能已達97%，但 **NVIDIA TOPPS 問題仍未解決**（遊戲暫停觸發 VFIO reset）',
@@ -318,7 +318,7 @@ const INITIAL_MD = [
   'blacklist snd_hda_codec_hdmi',
   '```',
   '',
-  '**9/27 晚間補充：NVIDIA 驅動相關黑名單優化**：',
+  '**9/27 晚間補充：NVIDIA 驅動相關黑名單最佳化**：',
   '',
   '為確保 VFIO 與 NVIDIA 驅動之間的穩定切換，在原有 softdep 設定基礎上，新增以下黑名單項目：',
   '',
@@ -542,14 +542,14 @@ const TIMELINE_EVENTS = [
   {
     date: '9/26',
     title: '最終整合指南',
-    content: '發佈最終整合指南：從 Host 到 VM 的系統化優化與除錯；指出超頻為錯誤誘因、完成核心綁定與驅動切換自動化；GPU 利用率達 ~97%。另補 nvidia-drm.modeset=0 的說明與步驟。同時確認 BIOS 中 Resizable BAR 設為 OFF。',
+    content: '發佈最終整合指南：從 Host 到 VM 的系統化最佳化與除錯；指出超頻為錯誤誘因、完成核心綁定與驅動切換自動化；GPU 利用率達 ~97%。另補 nvidia-drm.modeset=0 的說明與步驟。同時確認 BIOS 中 Resizable BAR 設為 OFF。',
     type: 'milestone',
     icon: CheckCircle2
   },
   {
     date: '9/27 晚間',
-    title: 'NVIDIA 驅動黑名單優化',
-    content: '新增 NVIDIA 驅動相關黑名單優化設定，包含 nvidia_modeset、nvidia_uvm、nvidia_drm 等模組黑名單，以確保 VFIO 與 NVIDIA 驅動之間的穩定切換。',
+    title: 'NVIDIA 驅動黑名單最佳化',
+    content: '新增 NVIDIA 驅動相關黑名單最佳化設定，包含 nvidia_modeset、nvidia_uvm、nvidia_drm 等模組黑名單，以確保 VFIO 與 NVIDIA 驅動之間的穩定切換。',
     type: 'feature',
     icon: Zap
   },
