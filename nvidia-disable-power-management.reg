@@ -1,0 +1,30 @@
+Windows Registry Editor Version 5.00
+
+; NVIDIA GPU 停用動態電源狀態管理 (TOPPS)
+; 用途：解決 Proxmox VFIO GPU Passthrough 環境下的電源狀態轉換問題
+; 適用於：Windows 10/11 VM with NVIDIA GPU
+
+; 方法一：針對第一張顯卡 (0000)
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000]
+"DisableDynamicPstate"=dword:00000001
+"PerfLevelSrc"=dword:00003333
+
+; 方法二：全域設定（備用）
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\GraphicsDrivers]
+"DisableIdlePowerManagement"=dword:00000001
+
+; 使用說明：
+; 1. 下載此檔案到 Windows VM
+; 2. 雙擊執行，允許權限提示
+; 3. 重新啟動系統
+; 4. 測試遊戲暫停選單是否仍觸發 VFIO reset
+
+; 注意：
+; - 此設定會讓 GPU 保持在高效能狀態，可能增加功耗
+; - 如需還原，請刪除這些 Registry 項目
+; - 請確認顯卡編號（可能是 0000、0001 等）
+
+; 檢查顯卡編號的方法：
+; 1. 開啟 regedit
+; 2. 導航到 HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}
+; 3. 找到包含您的 GPU 資訊的子項目（通常是 0000）
