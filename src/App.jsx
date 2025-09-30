@@ -63,7 +63,7 @@ const INITIAL_MD = [
   - 經測試確認 **hookscript 並非問題來源**，問題仍在持續追查中
   - **OCCT 穩定性測試**：使用 OCCT 進行 80% 顯示記憶體壓力測試，經過 40 多輪測試後顯示沒有異常，確認顯示記憶體本身穩定
   - **memtest86+ 測試**：系統記憶體測試通過（PASS），確認記憶體穩定性無虞`,
-  '- **9/29 進階測試發現與方案驗證**：問題呈現明顯的時間依賴特性，系統穩定運作約一小時後，觸發遊戲暫停選單時才會誘發 VFIO reset/restore bar 錯誤。經 OCCT 混合負載與單獨 3D+VRAM 測試（持續 33 分鐘）皆運作正常，顯示問題僅在特定遊戲場景下觸發，並非純硬體壓力測試可重現。測試 Windows Registry DisableIdlePowerManagement 設定後問題依舊，根本原因持續追蹤中。',
+  '- **9/29 進階測試發現與方案驗證**：問題呈現明顯的時間依賴特性，系統穩定運作約一小時後，觸發遊戲暫停選單時才會誘發 VFIO reset/restore bar 錯誤。經 OCCT 混合負載與單獨 3D+VRAM 測試（持續 33 分鐘）皆運作正常，顯示問題僅在特定遊戲場景下觸發，並非純硬體壓力測試可重現。已測試 Windows Registry DisableIdlePowerManagement 與 NVIDIA Profile Inspector 電源管理設定，兩者皆無效，問題依舊。根本原因持續追蹤中。',
   '',
   '---',
   '',
@@ -154,7 +154,13 @@ const INITIAL_MD = [
   '   # 已測試但問題依舊',
   '   reg add "HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers" /v "DisableIdlePowerManagement" /t REG_DWORD /d 1 /f',
   '   ```',
-  '2. **NVIDIA Profile Inspector**（Windows 端電源管理設定，**待測試**）',
+  '2. ~~**NVIDIA Profile Inspector**~~（**9/29 已測試：無效**）',
+  '   ```',
+  '   # 已測試設定但問題依舊',
+  '   Power management mode: Prefer maximum performance',
+  '   CUDA - Force P2 State: OFF',
+  '   Thread Optimization: OFF',
+  '   ```',
   '3. **VM 層級調整**（KVM 隱藏、MSR 處理，**待測試**）',
   '4. **VFIO 模組參數**（僅 nointxmask，已有 ASMP OFF 保護，**待測試**）',
   '5. ~~disable_idle_d3~~（已有 ASPM OFF，可能有害）',
@@ -482,7 +488,8 @@ const TIMELINE_EVENTS = [
       'OCCT 單獨 3D+VRAM 測試：持續 33 分鐘運作正常',
       '初步結論：問題僅在特定遊戲場景下觸發，並非純硬體壓力測試可重現',
       '可能涉及遊戲引擎特定的 DirectX 呼叫模式或渲染管線狀態轉換',
-      '測試 Windows Registry DisableIdlePowerManagement：無效，問題依舊',
+      '❌ 測試 Windows Registry DisableIdlePowerManagement：無效',
+      '❌ 測試 NVIDIA Profile Inspector 電源管理設定：無效',
       '根本原因持續追蹤中'
     ],
     type: 'issue',
