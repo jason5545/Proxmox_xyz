@@ -69,6 +69,7 @@ const INITIAL_MD = [
   '- **9/30 開始測試 disable_idle_d3 方案**：基於 PCIe 裝置消失發現，立即加入 `disable_idle_d3=1` VFIO 模組參數，阻止 GPU 進入 D3cold 深度睡眠狀態。搭配原有的 `pcie_aspm.policy=performance` 與 `kvm.ignore_msrs=1` 設定，開始長程測試驗證。監控重點：lspci 是否還會消失、VFIO reset 是否還會觸發。',
   '- **10/1 測試結果：disable_idle_d3 方案無效**：經過長時間測試，07:37 觸發遊戲暫停選單後運作正常，但 07:41（僅 4 分鐘後）仍發生 PCIe link down 錯誤。**確認 `disable_idle_d3=1` 參數無法解決本環境問題**，與部分社群回報「無效或讓問題更糟」的經驗一致。問題根源確定為 D3cold 電源管理，但需要更激進的控制手段。',
   '- **10/1 啟動 Plan B：Runtime PM 雙重控制**：準備實施更直接的電源管理方案：透過 hookscript 在 VM 啟動時同時停用 `d3cold_allowed` 與設定 `power/control=on`，完全阻止 GPU 進入任何深度睡眠狀態。此方案將在 Host 層級直接控制 PCIe 裝置電源狀態，而非依賴 VFIO 模組參數。',
+  '- **10/1 測試中：Windows VM 內 ASPM 停用**：在 disable_idle_d3 失敗後，嘗試從 VM 內部控制電源管理。透過 Windows 裝置管理員停用 GPU 的連結狀態電源管理（ASPM），與 Host 端的 `pcie_aspm=off` 形成雙重保護。此方案測試 VM 層級的電源狀態控制是否能阻止 GPU 進入深度睡眠，若有效將證明問題在 VM/GPU 互動層級而非純 Host VFIO 問題。',
   '',
   '---',
   '',
@@ -1001,6 +1002,21 @@ const TIMELINE_EVENTS = [
     ],
     type: 'issue',
     icon: AlertCircle
+  },
+  {
+    date: '10/1',
+    title: '⏳ 測試中：Windows VM 內 ASPM 停用',
+    content: '從 VM 內部控制電源管理，透過裝置管理員停用 GPU 的 ASPM。',
+    details: [
+      '🎯 方案：Windows 裝置管理員停用連結狀態電源管理',
+      '🔄 策略：雙重保護（Host pcie_aspm=off + VM 內部 ASPM 停用）',
+      '📊 測試目標：驗證 VM 層級電源控制是否有效',
+      '🔍 監控重點：lspci 裝置是否消失、VFIO reset 是否觸發',
+      '⏱️ 測試計畫：MSFS 1.5 小時，1 小時後頻繁暫停',
+      '💡 若有效：證明問題在 VM/GPU 互動層級而非純 Host VFIO'
+    ],
+    type: 'test',
+    icon: Calendar
   },
 ];
 
