@@ -64,7 +64,7 @@ const INITIAL_MD = [
   - **OCCT 穩定性測試**：使用 OCCT 進行 80% 顯示記憶體壓力測試，經過 40 多輪測試後顯示沒有異常，確認顯示記憶體本身穩定
   - **memtest86+ 測試**：系統記憶體測試通過（PASS），確認記憶體穩定性無虞`,
   '- **9/29 進階測試發現與方案驗證**：問題呈現明顯的時間依賴特性，系統穩定運作約一小時後，觸發遊戲暫停選單時才會誘發 VFIO reset/restore bar 錯誤。經 OCCT 混合負載與單獨 3D+VRAM 測試（持續 33 分鐘）皆運作正常，顯示問題僅在特定遊戲場景下觸發，並非純硬體壓力測試可重現。已測試 Windows Registry DisableIdlePowerManagement 與 NVIDIA Profile Inspector 電源管理設定，兩者皆無效，問題依舊。根本原因持續追蹤中。',
-  '- **9/30 硬體排查完成**：執行完整 PCIe 診斷，確認硬體層面完全正常：錯誤計數全為 0（DevSta: CorrErr- NonFatalErr- FatalErr-）、連結速度 16GT/s（PCIe 4.0 全速）、寬度 x16、無 AER 錯誤記錄。**100% 排除 PCIe Riser 硬體問題**，確認問題根源為虛擬化軟體層（VFIO 與 NVIDIA TOPPS 相容性）。',
+  '- **9/30 硬體排查完成**：執行完整 PCIe 診斷，確認硬體層面完全正常：錯誤計數全為 0（`DevSta: CorrErr- NonFatalErr- FatalErr-`）、連結速度 16GT/s（PCIe 4.0 全速）、寬度 x16、無 AER 錯誤記錄。**100% 排除 PCIe Riser 硬體問題**，確認問題根源為虛擬化軟體層（VFIO 與 NVIDIA TOPPS 相容性）。建立完整 PCIe 排查指令章節供未來參考。',
   '- **9/30 重大發現：PCIe 裝置消失現象**：進一步調查發現，問題發生時 **`lspci` 指令完全找不到 GPU 裝置**（01:00.0 從系統中消失）。這表示問題不是單純的驅動錯誤，而是 **GPU 進入 D3cold 深度睡眠後無法喚醒，導致 PCIe link down**。此發現徹底改變問題性質：從軟體相容性問題升級為 **PCIe 電源狀態管理問題**。解決方向調整為：阻止 GPU 進入深度睡眠狀態（disable_idle_d3 + Runtime PM 控制）。',
   '- **9/30 開始測試 disable_idle_d3 方案**：基於 PCIe 裝置消失發現，立即加入 `disable_idle_d3=1` VFIO 模組參數，阻止 GPU 進入 D3cold 深度睡眠狀態。搭配原有的 `pcie_aspm.policy=performance` 與 `kvm.ignore_msrs=1` 設定，開始長程測試驗證。監控重點：lspci 是否還會消失、VFIO reset 是否還會觸發。',
   '- **10/1 測試結果：disable_idle_d3 方案無效**：經過長時間測試，07:37 觸發遊戲暫停選單後運作正常，但 07:41（僅 4 分鐘後）仍發生 PCIe link down 錯誤。**確認 `disable_idle_d3=1` 參數無法解決本環境問題**，與部分社群回報「無效或讓問題更糟」的經驗一致。問題根源確定為 D3cold 電源管理，但需要更激進的控制手段。',
