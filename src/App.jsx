@@ -987,6 +987,21 @@ const TIMELINE_EVENTS = [
     type: 'test',
     icon: Calendar
   },
+  {
+    date: '10/1',
+    title: '❌ disable_idle_d3 方案測試失敗',
+    content: '經過長時間測試，確認 disable_idle_d3=1 參數無法解決本環境問題。',
+    details: [
+      '⏰ 07:37 - 觸發遊戲暫停選單，運作正常',
+      '⏰ 07:41 - 僅 4 分鐘後，仍發生 PCIe link down 錯誤',
+      '❌ 結論：disable_idle_d3=1 參數在本環境無效',
+      '📊 與社群回報一致：部分環境「無效或讓問題更糟」',
+      '🎯 問題根源確定：D3cold 電源管理失效',
+      '💡 下一步：需要更激進的控制手段（Runtime PM 雙重控制）'
+    ],
+    type: 'issue',
+    icon: AlertCircle
+  },
 ];
 
 // Timeline 組件
