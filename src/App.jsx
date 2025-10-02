@@ -399,7 +399,7 @@ const INITIAL_MD_ZH = [
   '## 時間線（重點事件）',
   '- **7/24**：發起懸賞求助，說明 DXGI HANG 與環境細節。',
   '- **8/3**：分享遠端串流顯示輸出：使用 **GLKVM** 取代實體螢幕/HDMI 假負載，便於遠端與 BIOS 存取。',
-  '- **8/6**：發佈 lm-sensors 修復報告（`nct6775 force_id=0xd802`）使風扇/溫度監控正常，並做永久化設定。',
+  '- **8/6**：發佈 lm-sensors 修復報告（`modprobe nct6775 force_id=0xd802`）使風扇/溫度監控正常，並做永久化設定。',
   '- **8/9**：發佈 **NUT 延遲關機策略**與管理腳本 `nut-delay-manager.sh`，將「斷電即關」改為「定時延後關」。',
   '- **8/9**：音訊回饋：以 **Apollo**，聲音驅動會自動切到 **Steam Streaming**，實測無爆音。',
   '- **8/10**：貼 **`upsc`** 量測數據（1500VA/900W，當下負載 ~17%），討論鉛酸電池壽命與放電策略。',
@@ -805,7 +805,7 @@ const INITIAL_MD_ZH = [
   '',
   '## 周邊可靠性與維運',
   '- **GLKVM**：作為遠端「螢幕存在」來源，遠端遊玩（Sunshine/Moonlight）不必插實體螢幕，也保留進 BIOS 能力。',
-  '- **lm-sensors 修復**：`nct6775 force_id=0xd802` 讓風扇/溫度監控如常。',
+  '- **lm-sensors 修復**：`modprobe nct6775 force_id=0xd802` 讓風扇/溫度監控如常。',
   '- **NUT 延遲關機**：以腳本實作延遲邏輯，避免短暫市電異常導致過度關閉。',
   '- **音訊實務**：以 Apollo 讓聲音驅動自動切到 **Steam Streaming**，避免爆音。',
   '- **UPS 能力與負載**：1500VA/實功 900W；當下負載 ~17%；採取淺循環、提早關機閾值以延壽。',
@@ -1568,7 +1568,7 @@ const TIMELINE_EVENTS = [
   {
     date: '8/6',
     title: 'lm-sensors 修復',
-    content: '發佈 lm-sensors 修復報告（nct6775 force_id=0xd802）使風扇/溫度監控正常，並做永久化設定。',
+    content: '發佈 lm-sensors 修復報告（modprobe nct6775 force_id=0xd802）使風扇/溫度監控正常，並做永久化設定。',
     type: 'fix',
     icon: CheckCircle2
   },
@@ -1780,7 +1780,7 @@ const TIMELINE_EVENTS_EN = [
   {
     date: '8/6',
     title: 'lm-sensors Fix',
-    content: 'Published lm-sensors fix report (nct6775 force_id=0xd802) for fan/temperature monitoring, made permanent.',
+    content: 'Published lm-sensors fix report (modprobe nct6775 force_id=0xd802) for fan/temperature monitoring, made permanent.',
     type: 'fix',
     icon: CheckCircle2
   },
