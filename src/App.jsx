@@ -1596,8 +1596,8 @@ const tocStyles = {
     sticky: "lg:sticky lg:top-24 h-max"
   },
 
-  // 標題樣式 - 清晰易讀
-  header: "text-sm font-bold tracking-wide uppercase text-gray-700 dark:text-gray-300 mb-2",
+  // 標題樣式 - 精美漸層
+  header: "text-sm font-bold tracking-wide uppercase bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent mb-2",
 
   // 導航容器樣式 - 流暢捲動
   nav: "space-y-1 text-sm max-h-[calc(100vh-260px)] overflow-y-auto pr-3 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent hover:scrollbar-thumb-gray-400 dark:hover:scrollbar-thumb-gray-600 scrollbar-thumb-rounded-full",
