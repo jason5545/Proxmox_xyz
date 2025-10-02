@@ -1590,47 +1590,47 @@ function useActiveSection(toc) {
 
 // TOC 樣式系統：統一管理層級樣式
 const tocStyles = {
-  // 基本容器樣式
+  // 基本容器樣式 - 現代玻璃設計
   container: {
-    base: "rounded-2xl bg-white/60 dark:bg-gray-900/60 backdrop-blur-md border border-neutral-200/50 dark:border-neutral-800/50 p-5 shadow-xl dark:shadow-gray-900/50",
-    sticky: "lg:sticky lg:top-[64px] h-max"
+    base: "rounded-2xl bg-gradient-to-br from-white to-gray-50 dark:from-slate-900 dark:to-gray-900 border border-gray-200 dark:border-gray-800 p-7 shadow-2xl shadow-gray-900/5 dark:shadow-black/20 backdrop-blur-sm",
+    sticky: "lg:sticky lg:top-24 h-max"
   },
 
-  // 標題樣式
-  header: "text-sm font-bold tracking-wide uppercase text-gray-600 dark:text-gray-400",
+  // 標題樣式 - 精美漸層
+  header: "text-sm font-bold tracking-wide uppercase bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent mb-2",
 
-  // 導航容器樣式
-  nav: "space-y-1 text-sm max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700",
+  // 導航容器樣式 - 流暢捲動
+  nav: "space-y-1 text-sm max-h-[calc(100vh-260px)] overflow-y-auto pr-3 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent hover:scrollbar-thumb-gray-400 dark:hover:scrollbar-thumb-gray-600 scrollbar-thumb-rounded-full",
 
-  // 項目基礎樣式
+  // 項目基礎樣式 - 精緻互動
   item: {
-    base: "w-full text-left block truncate py-1 px-2 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50",
-    hover: "hover:bg-blue-50 dark:hover:bg-blue-900/30",
-    active: "bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300",
-    inactive: ""
+    base: "w-full text-left block truncate py-2.5 px-4 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:ring-offset-2 dark:focus:ring-offset-slate-900",
+    hover: "hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-950/30 dark:hover:to-purple-950/30 hover:shadow-md hover:scale-[1.02]",
+    active: "bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-600 dark:to-purple-600 text-white shadow-lg shadow-blue-500/30 dark:shadow-blue-500/40 scale-105",
+    inactive: "text-gray-700 dark:text-gray-300"
   },
 
-  // 層級特定樣式
+  // 層級特定樣式 - 優化：更明顯的縮排與視覺層次
   depth: {
     1: {
-      text: "font-bold text-gray-800 dark:text-gray-100",
+      text: "font-bold text-base",
       padding: "",
       prefix: ""
     },
     2: {
-      text: "text-gray-700 dark:text-gray-300",
-      padding: "pl-4",
-      prefix: "›"
+      text: "font-medium",
+      padding: "pl-5",
+      prefix: "▸"
     },
     3: {
-      text: "text-gray-600 dark:text-gray-400",
-      padding: "pl-6",
-      prefix: "››"
+      text: "font-normal",
+      padding: "pl-10",
+      prefix: "▹"
     },
     4: {
-      text: "text-gray-500 dark:text-gray-500",
-      padding: "pl-8",
-      prefix: "›››"
+      text: "font-normal text-sm",
+      padding: "pl-14",
+      prefix: "·"
     }
   }
 };
@@ -1689,13 +1689,16 @@ const TocItem = React.memo(function TocItem({
       data-toc-depth={item.depth}
       data-toc-id={item.id}
     >
-      <span className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+      <span className="flex items-center gap-2">
         {prefix && (
-          <span className="opacity-40 mr-1" aria-hidden="true">
+          <span className={`flex-shrink-0 ${isActive ? 'opacity-100' : 'opacity-50'} transition-opacity`} aria-hidden="true">
             {prefix}
           </span>
         )}
-        <span className={isActive ? 'font-medium' : ''}>{item.title}</span>
+        <span className="truncate">{item.title}</span>
+        {isActive && (
+          <span className="ml-auto flex-shrink-0 w-1.5 h-1.5 rounded-full bg-white" aria-hidden="true" />
+        )}
       </span>
     </button>
   );
@@ -1789,14 +1792,21 @@ const TocContainer = React.memo(function TocContainer({
 
   return (
     <aside className={`${tocStyles.container.sticky} ${className}`}>
-      <div className={tocStyles.container.base}>
-        <div className="flex items-center justify-between mb-3">
+      <motion.div
+        initial={{opacity:0,x:-30}}
+        animate={{opacity:1,x:0}}
+        transition={{duration:0.6,ease:"easeOut"}}
+        className={tocStyles.container.base}
+      >
+        {/* 標題區域 - 精美設計 */}
+        <div className="flex items-center justify-between mb-5 pb-4 border-b-2 border-gradient-to-r from-blue-200 to-purple-200 dark:from-blue-900/50 dark:to-purple-900/50">
           <h2 className={tocStyles.header}>{title}</h2>
-          <span className="text-xs text-gray-400 dark:text-gray-500">
-            {toc.length} 項
+          <span className="flex items-center justify-center w-8 h-8 text-xs font-bold bg-gradient-to-br from-blue-600 to-purple-600 dark:from-blue-500 dark:to-purple-500 text-white rounded-lg shadow-lg shadow-blue-500/30">
+            {toc.length}
           </span>
         </div>
 
+        {/* 導航區域 */}
         <nav
           className={tocStyles.nav}
           style={{ maxHeight }}
@@ -1816,22 +1826,21 @@ const TocContainer = React.memo(function TocContainer({
           ))}
         </nav>
 
+        {/* 列印按鈕 - 精美漸層按鈕 */}
         {showPrintButton && (
-          <>
-            <hr className="my-3 border-neutral-200 dark:border-neutral-800"/>
-            <div className="flex justify-center">
-              <button
-                onClick={handlePrint}
-                className="inline-flex items-center gap-2 rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur border border-neutral-300/50 dark:border-neutral-700/50 px-3 py-1.5 text-xs hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all"
-                title="列印或匯出 PDF"
-                aria-label="列印或匯出 PDF"
-              >
-                列印 / PDF
-              </button>
-            </div>
-          </>
+          <div className="mt-5 pt-5 border-t-2 border-gradient-to-r from-blue-200 to-purple-200 dark:from-blue-900/50 dark:to-purple-900/50">
+            <button
+              onClick={handlePrint}
+              className="group w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-gray-600 to-gray-700 dark:from-gray-700 dark:to-gray-800 hover:from-gray-700 hover:to-gray-800 dark:hover:from-gray-800 dark:hover:to-gray-900 px-4 py-3 text-sm font-semibold text-white transition-all shadow-lg hover:shadow-xl hover:scale-105 duration-200"
+              title="列印文件或匯出為 PDF"
+              aria-label="列印文件或匯出為 PDF"
+            >
+              <Download size={18} className="group-hover:-translate-y-0.5 transition-transform duration-200" />
+              列印 / PDF
+            </button>
+          </div>
         )}
-      </div>
+      </motion.div>
     </aside>
   );
 });
@@ -1841,9 +1850,9 @@ function CodeBlock({children}) {
   const [copied, setCopied] = useState(false);
 
   return (
-    <div className="group relative">
-      <pre className="rounded-2xl border border-gray-200/50 dark:border-gray-700/50 p-5 overflow-x-auto text-sm bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-900/50 dark:to-gray-800/30 text-gray-800 dark:text-gray-200 shadow-lg dark:shadow-gray-900/50 backdrop-blur-sm">
-        <code className="font-mono">{text}</code>
+    <div className="group relative my-8">
+      <pre className="rounded-2xl border-2 border-gray-200 dark:border-gray-700 p-6 overflow-x-auto text-sm bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-900 dark:to-slate-900 text-gray-800 dark:text-gray-200 shadow-xl shadow-gray-900/5 dark:shadow-black/20 font-mono">
+        <code className="leading-relaxed">{text}</code>
       </pre>
       <button
         onClick={() => {
@@ -1852,14 +1861,14 @@ function CodeBlock({children}) {
             setTimeout(() => setCopied(false), 2000);
           });
         }}
-        className={`absolute top-3 right-3 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-all backdrop-blur-md ${
+        className={`absolute top-4 right-4 flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all duration-200 ${
           copied
-            ? "bg-green-500/90 text-white border border-green-400/50"
-            : "bg-white/80 dark:bg-gray-800/80 border border-gray-300/50 dark:border-gray-600/50 opacity-0 group-hover:opacity-100"
+            ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-xl shadow-emerald-500/40 scale-110"
+            : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-2 border-gray-300 dark:border-gray-600 opacity-0 group-hover:opacity-100 hover:shadow-lg hover:scale-105 hover:border-blue-400 dark:hover:border-blue-500"
         }`}
         title={copied ? "已複製" : "複製程式碼"}
       >
-        <Clipboard size={14} className={copied ? "animate-bounce" : ""} />
+        <Clipboard size={16} className={copied ? "animate-bounce" : ""} />
         {copied ? "已複製!" : "複製"}
       </button>
     </div>
@@ -1953,7 +1962,7 @@ export default function ReportSite() {
   const components = {
     code({inline, children}) {
       if (inline) return (
-        <code className="px-1.5 py-0.5 mx-0.5 rounded-lg bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 text-blue-800 dark:text-blue-200 font-medium text-sm">
+        <code className="px-2 py-1 mx-0.5 rounded-lg bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/40 dark:to-purple-900/40 text-blue-700 dark:text-blue-300 font-semibold text-sm border border-blue-200 dark:border-blue-800 shadow-sm">
           {children}
         </code>
       );
@@ -1963,7 +1972,7 @@ export default function ReportSite() {
       const text = extractTextFromChildren(children);
       const id = slugify(text);
       return (
-        <h1 id={id} className="scroll-mt-24 text-3xl font-bold tracking-tight">
+        <h1 id={id} className="scroll-mt-28 text-4xl font-black tracking-tight text-gray-900 dark:text-white mt-12 mb-6">
           {children}
         </h1>
       );
@@ -1972,7 +1981,7 @@ export default function ReportSite() {
       const text = extractTextFromChildren(children);
       const id = slugify(text);
       return (
-        <h2 id={id} className="scroll-mt-24 text-2xl font-semibold mt-8">
+        <h2 id={id} className="scroll-mt-28 text-3xl font-bold mt-10 mb-5 text-gray-900 dark:text-white border-b-2 border-gray-200 dark:border-gray-800 pb-3">
           {children}
         </h2>
       );
@@ -1981,7 +1990,7 @@ export default function ReportSite() {
       const text = extractTextFromChildren(children);
       const id = slugify(text);
       return (
-        <h3 id={id} className="scroll-mt-24 text-xl font-semibold mt-6">
+        <h3 id={id} className="scroll-mt-28 text-2xl font-bold mt-8 mb-4 text-gray-800 dark:text-gray-100">
           {children}
         </h3>
       );
@@ -1990,7 +1999,7 @@ export default function ReportSite() {
       const text = extractTextFromChildren(children);
       const id = slugify(text);
       return (
-        <h4 id={id} className="scroll-mt-24 text-lg font-semibold mt-4">
+        <h4 id={id} className="scroll-mt-28 text-xl font-semibold mt-6 mb-3 text-gray-800 dark:text-gray-100">
           {children}
         </h4>
       );
@@ -2001,7 +2010,7 @@ export default function ReportSite() {
           href={href}
           target="_blank"
           rel="noreferrer"
-          className="text-blue-600 dark:text-blue-400 underline decoration-2 decoration-blue-300 dark:decoration-blue-600 underline-offset-2 hover:decoration-blue-500 dark:hover:decoration-blue-400 transition-all hover:text-blue-700 dark:hover:text-blue-300"
+          className="text-blue-600 dark:text-blue-400 underline decoration-2 decoration-blue-400 dark:decoration-blue-600 underline-offset-4 hover:decoration-blue-600 dark:hover:decoration-blue-400 transition-all hover:text-blue-700 dark:hover:text-blue-300 font-medium"
         >
           {children}
         </a>
@@ -2009,9 +2018,53 @@ export default function ReportSite() {
     },
     blockquote({children}) {
       return (
-        <blockquote className="border-l-4 border-orange-400 dark:border-orange-300 pl-4 py-2 my-4 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-r-xl italic">
+        <blockquote className="border-l-4 border-orange-500 dark:border-orange-400 pl-6 py-4 my-6 bg-gradient-to-r from-orange-50 via-amber-50 to-yellow-50 dark:from-orange-900/20 dark:via-amber-900/20 dark:to-yellow-900/20 rounded-r-2xl italic shadow-md">
           {children}
         </blockquote>
+      );
+    },
+    table({children}) {
+      return (
+        <div className="my-8 overflow-x-auto rounded-2xl border-2 border-gray-200 dark:border-gray-700 shadow-xl">
+          <table className="w-full border-collapse">
+            {children}
+          </table>
+        </div>
+      );
+    },
+    thead({children}) {
+      return (
+        <thead className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-700 dark:to-purple-700 text-white">
+          {children}
+        </thead>
+      );
+    },
+    tbody({children}) {
+      return (
+        <tbody className="bg-white dark:bg-gray-900">
+          {children}
+        </tbody>
+      );
+    },
+    tr({children, isHeader}) {
+      return (
+        <tr className={isHeader ? "" : "border-b border-gray-200 dark:border-gray-800 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors"}>
+          {children}
+        </tr>
+      );
+    },
+    th({children}) {
+      return (
+        <th className="px-6 py-4 text-left text-sm font-bold uppercase tracking-wider">
+          {children}
+        </th>
+      );
+    },
+    td({children}) {
+      return (
+        <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+          {children}
+        </td>
       );
     },
   };
@@ -2028,77 +2081,140 @@ export default function ReportSite() {
   }, []);
 
   return (
-    <div className="min-h-screen transition-colors duration-300 bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 text-neutral-900 dark:text-neutral-100">
-      {/* Top Bar */}
-      <div className="sticky top-0 z-10 backdrop-blur-xl bg-white/80 dark:bg-gray-900/80 border-b border-neutral-200/50 dark:border-neutral-800/50 shadow-lg dark:shadow-gray-900/30">
-        <div className="mx-auto max-w-[1920px] px-6 py-4 flex items-center gap-3">
-          <motion.div initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} className="flex items-center gap-2 grow">
-            <h1 className="text-lg font-bold text-gray-800 dark:text-gray-100">
-              {title}
-            </h1>
-          </motion.div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={()=>setDark(isDark?"0":"1")}
-              className="inline-flex items-center gap-2 rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur border border-neutral-300/50 dark:border-neutral-700/50 px-3 py-2 hover:bg-white/70 dark:hover:bg-gray-800/70 transition-all shadow-md"
-              title={isDark?"切到淺色":"切到深色"}
+    <div className="min-h-screen transition-colors duration-300 bg-gradient-to-br from-gray-50 via-slate-50 to-blue-50 dark:from-slate-950 dark:via-gray-950 dark:to-blue-950/40 text-gray-900 dark:text-gray-100">
+      {/* Top Bar - 簡潔現代設計 */}
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 border-b border-gray-200 dark:border-gray-800 shadow-sm">
+        <div className="mx-auto max-w-[1800px] px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between gap-6">
+            {/* 左側：品牌標識 */}
+            <motion.div
+              initial={{opacity:0,x:-20}}
+              animate={{opacity:1,x:0}}
+              transition={{duration:0.5,ease:"easeOut"}}
+              className="flex items-center gap-4 min-w-0"
             >
-              {isDark ? <SunMedium size={16}/> : <Moon size={16}/>}{" "}<span className="hidden sm:inline">{isDark?"淺色":"深色"}</span>
-            </button>
-            <button
-              onClick={exportMarkdown}
-              className="inline-flex items-center gap-2 rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur border border-neutral-300/50 dark:border-neutral-700/50 px-3 py-2 hover:bg-white/70 dark:hover:bg-gray-800/70 transition-all shadow-md"
-              title="匯出 Markdown"
+              <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 dark:from-blue-500 dark:via-purple-500 dark:to-indigo-600 shadow-xl shadow-blue-500/20 dark:shadow-blue-500/30 flex-shrink-0 ring-4 ring-blue-100 dark:ring-blue-900/30">
+                <Zap className="w-6 h-6 text-white drop-shadow-md" />
+              </div>
+              <div className="min-w-0 hidden md:block">
+                <h1 className="text-xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent leading-tight">
+                  GPU Passthrough
+                </h1>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-0.5">
+                  MSFS on Proxmox 技術報告
+                </p>
+              </div>
+            </motion.div>
+
+            {/* 右側：操作工具組 */}
+            <motion.div
+              initial={{opacity:0,x:20}}
+              animate={{opacity:1,x:0}}
+              transition={{duration:0.5,ease:"easeOut",delay:0.1}}
+              className="flex items-center gap-3"
             >
-              <FileDown size={16}/>{" "}<span className="hidden sm:inline">MD</span>
-            </button>
-            <button
-              onClick={exportHtml}
-              className="inline-flex items-center gap-2 rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur border border-neutral-300/50 dark:border-neutral-700/50 px-3 py-2 hover:bg-white/70 dark:hover:bg-gray-800/70 transition-all shadow-md"
-              title="匯出靜態 HTML"
-            >
-              <Download size={16}/>{" "}<span className="hidden sm:inline">HTML</span>
-            </button>
-            <button
-              onClick={() => {
-                const results = runSelfTests();
-                const ok = results.every(r => r.pass);
-                alert((ok ? "✅ 自我檢查通過" : "⚠️ 自我檢查有失敗") + "\n\n" + results.map(r => `${r.pass ? 'PASS' : 'FAIL'} - ${r.name}${r.extra ? ' -> ' + r.extra : ''}`).join('\n'));
-              }}
-              className="inline-flex items-center gap-2 rounded-xl bg-emerald-50/50 dark:bg-emerald-900/20 backdrop-blur border border-emerald-300/50 dark:border-emerald-700/50 px-3 py-2 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100/50 dark:hover:bg-emerald-900/30 transition-all shadow-md"
-              title="執行自我測試（slugify / extractToc / marked）"
-            >
-              <BugPlay size={16}/>{" "}<span className="hidden sm:inline">自我檢查</span>
-            </button>
+              {/* 主題切換 */}
+              <button
+                onClick={()=>setDark(isDark?"0":"1")}
+                className="group relative flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 hover:from-amber-100 hover:to-orange-100 dark:hover:from-amber-900/30 dark:hover:to-orange-900/30 transition-all duration-300 border border-gray-200 dark:border-gray-700 hover:border-amber-300 dark:hover:border-amber-700 shadow-md hover:shadow-lg hover:scale-105"
+                title={isDark?"切換到淺色模式":"切換到深色模式"}
+                aria-label={isDark?"切換到淺色模式":"切換到深色模式"}
+              >
+                {isDark ?
+                  <SunMedium size={20} className="text-amber-500 group-hover:rotate-45 transition-transform duration-300"/> :
+                  <Moon size={20} className="text-gray-600 group-hover:-rotate-12 transition-transform duration-300"/>
+                }
+              </button>
+
+              {/* 分隔線 */}
+              <div className="w-px h-8 bg-gradient-to-b from-transparent via-gray-300 dark:via-gray-700 to-transparent hidden sm:block" />
+
+              {/* 匯出功能組 */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={exportMarkdown}
+                  className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-600 dark:to-blue-700 hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-700 dark:hover:to-blue-800 text-white font-medium text-sm shadow-md hover:shadow-xl hover:scale-105 transition-all duration-200"
+                  title="匯出 Markdown 檔案"
+                >
+                  <FileDown size={18} className="group-hover:-translate-y-0.5 transition-transform duration-200"/>
+                  <span className="hidden sm:inline">MD</span>
+                </button>
+                <button
+                  onClick={exportHtml}
+                  className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 dark:from-purple-600 dark:to-purple-700 hover:from-purple-700 hover:to-purple-800 dark:hover:from-purple-700 dark:hover:to-purple-800 text-white font-medium text-sm shadow-md hover:shadow-xl hover:scale-105 transition-all duration-200"
+                  title="匯出靜態 HTML 檔案"
+                >
+                  <Download size={18} className="group-hover:-translate-y-0.5 transition-transform duration-200"/>
+                  <span className="hidden sm:inline">HTML</span>
+                </button>
+              </div>
+
+              {/* 分隔線 */}
+              <div className="w-px h-8 bg-gradient-to-b from-transparent via-gray-300 dark:via-gray-700 to-transparent hidden lg:block" />
+
+              {/* 測試按鈕 */}
+              <button
+                onClick={() => {
+                  const results = runSelfTests();
+                  const ok = results.every(r => r.pass);
+                  alert((ok ? "✅ 自我檢查通過" : "⚠️ 自我檢查有失敗") + "\n\n" + results.map(r => `${r.pass ? 'PASS' : 'FAIL'} - ${r.name}${r.extra ? ' -> ' + r.extra : ''}`).join('\n'));
+                }}
+                className="group hidden lg:flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-600 dark:to-teal-600 hover:from-emerald-700 hover:to-teal-700 dark:hover:from-emerald-700 dark:hover:to-teal-700 text-white font-medium text-sm shadow-md hover:shadow-xl hover:scale-105 transition-all duration-200"
+                title="執行自我測試"
+              >
+                <BugPlay size={18} className="group-hover:rotate-12 transition-transform duration-200"/>
+                <span className="hidden xl:inline">測試</span>
+              </button>
+            </motion.div>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Body */}
-      <div className="mx-auto max-w-[1920px] px-6">
-        <div className="grid grid-cols-1 xl:grid-cols-[320px,1fr] 2xl:grid-cols-[360px,1fr] gap-8 py-6">
+      {/* Body - 現代化佈局 */}
+      <div className="mx-auto max-w-[1800px] px-4 sm:px-6 lg:px-8 py-8 lg:py-10">
+        <div className="grid grid-cols-1 lg:grid-cols-[300px,1fr] xl:grid-cols-[340px,1fr] gap-6 lg:gap-10">
           {/* TOC - 使用重構後的 TocContainer */}
           <TocContainer markdown={markdown} title="目錄" />
 
-          {/* Main */}
+          {/* Main Content - 清晰簡潔設計 */}
           <main>
-            <article className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-2xl p-8 md:p-10 lg:p-12 xl:p-14 2xl:p-16 shadow-xl dark:shadow-gray-900/50 prose prose-neutral dark:prose-invert max-w-none prose-lg xl:prose-xl">
-              <h1 className="mb-2 text-4xl md:text-5xl font-black bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
-                {title}
-              </h1>
-              <p className="mt-2 text-base text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                📄 MSFS on Proxmox with GPU Passthrough 技術報告。支援匯出 <strong className="text-blue-600 dark:text-blue-400">Markdown</strong> 與 <strong className="text-purple-600 dark:text-purple-400">靜態 HTML</strong>
-              </p>
+            <article className="bg-white dark:bg-slate-900/95 rounded-2xl p-8 sm:p-10 lg:p-14 shadow-2xl shadow-gray-900/5 dark:shadow-black/30 border border-gray-200 dark:border-gray-800 prose prose-slate dark:prose-invert max-w-none prose-lg backdrop-blur-sm">
+              {/* 文章標題區域 - 簡潔精美 */}
+              <div className="mb-10 pb-8 border-b-2 border-gray-200 dark:border-gray-800">
+                <motion.h1
+                  initial={{opacity:0,y:20}}
+                  animate={{opacity:1,y:0}}
+                  transition={{duration:0.6}}
+                  className="mb-4 text-4xl sm:text-5xl lg:text-6xl font-black bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 dark:from-white dark:via-blue-300 dark:to-purple-300 bg-clip-text text-transparent leading-tight"
+                >
+                  {title}
+                </motion.h1>
+                <motion.div
+                  initial={{opacity:0}}
+                  animate={{opacity:1}}
+                  transition={{duration:0.8,delay:0.2}}
+                  className="flex flex-wrap items-center gap-3 text-sm text-gray-600 dark:text-gray-400"
+                >
+                  <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/40 text-blue-700 dark:text-blue-300 font-semibold border border-blue-200 dark:border-blue-700">
+                    <FileDown size={16} />
+                    技術報告
+                  </span>
+                  <span className="text-gray-300 dark:text-gray-700">|</span>
+                  <span className="font-medium">MSFS on Proxmox</span>
+                  <span className="text-gray-300 dark:text-gray-700">|</span>
+                  <span>GPU Passthrough 完整實錄</span>
+                </motion.div>
+              </div>
 
               {/* 渲染時間線前的內容 */}
               <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
                 {before}
               </ReactMarkdown>
 
-              {/* 渲染時間線組件 */}
+              {/* 渲染時間線組件 - 優化：增加視覺分隔 */}
               {timeline && (
-                <div id="時間線重點事件" className="scroll-mt-24">
-                  <h2 className="text-2xl font-semibold mt-8 mb-4">時間線（重點事件）</h2>
+                <div id="時間線重點事件" className="scroll-mt-24 my-12">
+                  <h2 className="text-2xl sm:text-3xl font-bold mt-12 mb-6 text-slate-900 dark:text-white">時間線（重點事件）</h2>
                   <Timeline events={TIMELINE_EVENTS} />
                 </div>
               )}
