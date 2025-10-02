@@ -2149,22 +2149,6 @@ export default function ReportSite() {
                 </button>
               </div>
 
-              {/* 分隔線 */}
-              <div className="w-px h-8 bg-gradient-to-b from-transparent via-gray-300 dark:via-gray-700 to-transparent hidden lg:block" />
-
-              {/* 測試按鈕 */}
-              <button
-                onClick={() => {
-                  const results = runSelfTests();
-                  const ok = results.every(r => r.pass);
-                  alert((ok ? "✅ 自我檢查通過" : "⚠️ 自我檢查有失敗") + "\n\n" + results.map(r => `${r.pass ? 'PASS' : 'FAIL'} - ${r.name}${r.extra ? ' -> ' + r.extra : ''}`).join('\n'));
-                }}
-                className="group hidden lg:flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-600 dark:to-teal-600 hover:from-emerald-700 hover:to-teal-700 dark:hover:from-emerald-700 dark:hover:to-teal-700 text-white font-medium text-sm shadow-md hover:shadow-xl hover:scale-105 transition-all duration-200"
-                title="執行自我測試"
-              >
-                <BugPlay size={18} className="group-hover:rotate-12 transition-transform duration-200"/>
-                <span className="hidden xl:inline">測試</span>
-              </button>
             </motion.div>
           </div>
         </div>
