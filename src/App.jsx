@@ -1596,8 +1596,8 @@ const tocStyles = {
     sticky: "lg:sticky lg:top-24 h-max"
   },
 
-  // 標題樣式 - 精美漸層
-  header: "text-sm font-bold tracking-wide uppercase bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent mb-2",
+  // 標題樣式 - 清晰易讀
+  header: "text-sm font-bold tracking-wide uppercase text-gray-700 dark:text-gray-300 mb-2",
 
   // 導航容器樣式 - 流暢捲動
   nav: "space-y-1 text-sm max-h-[calc(100vh-260px)] overflow-y-auto pr-3 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent hover:scrollbar-thumb-gray-400 dark:hover:scrollbar-thumb-gray-600 scrollbar-thumb-rounded-full",
@@ -2097,10 +2097,10 @@ export default function ReportSite() {
                 <Zap className="w-6 h-6 text-white drop-shadow-md" />
               </div>
               <div className="min-w-0 hidden md:block">
-                <h1 className="text-xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent leading-tight">
+                <h1 className="text-xl font-extrabold text-gray-900 dark:text-white leading-tight drop-shadow-sm">
                   GPU Passthrough
                 </h1>
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-0.5">
+                <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mt-0.5">
                   MSFS on Proxmox 技術報告
                 </p>
               </div>
@@ -2185,7 +2185,10 @@ export default function ReportSite() {
                   initial={{opacity:0,y:20}}
                   animate={{opacity:1,y:0}}
                   transition={{duration:0.6}}
-                  className="mb-4 text-4xl sm:text-5xl lg:text-6xl font-black bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 dark:from-white dark:via-blue-300 dark:to-purple-300 bg-clip-text text-transparent leading-tight"
+                  className="mb-4 text-4xl sm:text-5xl lg:text-6xl font-black text-gray-900 dark:text-white leading-tight"
+                  style={{
+                    textShadow: '0 2px 10px rgba(59, 130, 246, 0.1)'
+                  }}
                 >
                   {title}
                 </motion.h1>
