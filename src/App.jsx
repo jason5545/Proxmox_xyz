@@ -1288,27 +1288,6 @@ const INITIAL_MD_EN = [
   '---',
   '',
   '## Timeline (Key Events)',
-  '- **7/24**: Posted bounty for help, described DXGI HANG and environment details.',
-  '- **8/3**: Shared remote display output: Using **GLKVM** instead of physical monitor/HDMI dummy, convenient for remote access and BIOS.',
-  '- **8/6**: Published lm-sensors fix report (`nct6775 force_id=0xd802`) for fan/temperature monitoring, made permanent.',
-  '- **8/9**: Published **NUT delayed shutdown strategy** and management script `nut-delay-manager.sh`, changed from "power loss immediate shutdown" to "timed delayed shutdown".',
-  '- **8/9**: Audio feedback: Using **Apollo**, audio driver auto-switches to **Steam Streaming**, tested without crackling.',
-  '- **8/10**: Posted **`upsc`** measurement data (1500VA/900W, current load ~17%), discussed lead-acid battery lifespan and discharge strategy.',
-  '- **9/25**: Added **GRUB parameter adjustment** and **BIOS ASPM settings**: Added `pcie_aspm=off` in GRUB to disable PCIe Active State Power Management, set ASPM to OFF in BIOS to further improve GPU passthrough stability.',
-  '- **9/26**: Published **final integration guide**: Systematic optimization from Host to VM and debugging; completed **core pinning** and **driver switching automation**; GPU utilization reached ~97%. Added `nvidia-drm.modeset=0` explanation and steps. Confirmed BIOS **Resizable BAR set to OFF**.',
-  '- **9/27 Evening**: Added **NVIDIA driver blacklist** optimization settings, including `nvidia_modeset`, `nvidia_uvm`, `nvidia_drm` modules to ensure stable switching between VFIO and NVIDIA drivers.',
-  '- **9/28**: Started **PMDG 777F long-haul test flight** (Tokyo Haneda RJTT → Dubai OMDB) to verify system stability and performance under high-load long-duration operation.',
-  '- **9/28 Long-haul Test Finding**: During **PMDG 777F** test, found that triggering game pause menu easily causes **VFIO reset/restore bar** issue. Further narrowed to **Windows Event Viewer** **NVIDIA TOPPS** related errors. Community reports suggest potential **display memory management** issue. Testing confirmed **hookscript not the source**, investigation ongoing. **OCCT stability test**: 80% display memory stress test passed 40+ rounds without anomalies. **memtest86+ test**: System memory passed, confirmed stable.',
-  '- **9/29 Advanced Testing & Solution Validation**: Issue shows clear time-dependent characteristics, triggering pause menu after ~1 hour stable operation induces VFIO reset/restore bar errors. OCCT mixed load and 3D+VRAM tests (33 min continuous) ran normally, showing issue only triggers in specific game scenarios, not reproducible in pure hardware stress tests. Tested Windows Registry DisableIdlePowerManagement and NVIDIA Profile Inspector power settings, both ineffective. Root cause investigation ongoing.',
-  '- **9/30 Hardware Investigation Complete**: Executed full PCIe diagnostics, confirmed hardware layer completely normal: error counts all zero (`DevSta: CorrErr- NonFatalErr- FatalErr-`), link speed 16GT/s (PCIe 4.0 full speed), width x16, no AER error records. **100% ruled out PCIe Riser hardware issue**, confirmed root cause in virtualization software layer (VFIO and NVIDIA TOPPS compatibility). Created complete PCIe diagnostic command chapter for future reference.',
-  '- **9/30 Major Discovery: PCIe Device Disappearance**: Further investigation revealed when issue occurs, **`lspci` command cannot find GPU device** (01:00.0 disappears from system). This indicates not just driver error, but **GPU enters D3cold deep sleep and cannot wake, causing PCIe link down**. This finding fundamentally changes issue nature: from software compatibility to **PCIe power state management problem**. Solution direction adjusted to: prevent GPU from entering deep sleep (disable_idle_d3 + Runtime PM control).',
-  '- **9/30 Testing disable_idle_d3 Solution**: Based on PCIe device loss finding, immediately added `disable_idle_d3=1` VFIO module parameter to prevent GPU from entering D3cold deep sleep. Combined with existing `pcie_aspm.policy=performance` and `kvm.ignore_msrs=1` settings, started long-term validation. Monitoring focus: whether lspci still loses device, whether VFIO reset still triggers.',
-  '- **10/1 Test Result: disable_idle_d3 Solution Ineffective**: After long-term testing, 07:37 pause menu triggered normally, but 07:41 (only 4 minutes later) still experienced PCIe link down error. **Confirmed `disable_idle_d3=1` parameter cannot solve issue in this environment**, consistent with some community reports of "ineffective or makes it worse". Root cause confirmed as D3cold power management, but requires more aggressive control.',
-  '- **10/1 Plan B Activated: Runtime PM Dual Control**: Preparing more direct power management solution: via hookscript disable both `d3cold_allowed` and set `power/control=on` when VM starts, completely preventing GPU from entering any deep sleep state. This solution will directly control PCIe device power state at Host level, not relying on VFIO module parameters.',
-  '- **10/1 Testing: Windows VM ASPM Disable**: After disable_idle_d3 failed, attempting control from VM internal. Disabled GPU Link State Power Management (ASPM) via Windows Device Manager, forming dual protection with Host `pcie_aspm=off`. Testing if VM-level power state control can prevent GPU deep sleep; if effective, proves issue at VM/GPU interaction level rather than pure Host VFIO problem.',
-  '- **10/1 Noon: 3DMark Stability Test Reveals Critical Clue**: Executed 3DMark Time Spy Stress Test (20 loops), stability only **88.7%** (normal ≥97%), confirmed baseline stability issue. More critically, **historical evidence surfaced**: recalled Windows bare-metal had **continuous HDMI flickering** (TDR events), proving **PCIe signal errors pre-existing**, but VFIO environment fails directly due to lack of Windows TDR fault tolerance.',
-  '- **10/1 Afternoon: Root Cause Confirmed — PCIe Gen4 Signal Integrity Insufficient**: Synthesizing all evidence (3DMark 88.7%, historical HDMI flicker, BadTLP/CorrErr errors, GPU complete loss), confirmed root cause as **Lian Li Q58 included Riser cannot stably support PCIe Gen4 long-term operation**. Gen4 extremely sensitive to impedance continuity, differential pair symmetry, EMI shielding on 200mm extension cable; exceeds tolerance under "long-term high load + power surge" combination. **Immediate solution**: Force PCIe Gen3 in BIOS (zero cost, 98% expected success rate, <3% performance impact).',
-  '- **10/2: PCIe Gen3 Complete Test — Composite Defect Discovered**: After forcing Gen3 in BIOS, executed complete testing, hardware confirmed `current_link_speed = 8.0 GT/s` (Gen3 effective). **3DMark stability improved to 93.2%** (vs Gen4 88.7%, +4.5% improvement), but **still below normal 97%** (gap -3.8%). **Key Finding**: MSFS pause menu issue **completely unchanged** (still 100% triggers GPU loss), proving Gen3 downgrade only improves "signal quality", cannot fix "physical connection defect". **Problem Nature Repositioned**: from "signal integrity insufficient" corrected to "**Riser Hardware Composite Defect**" (85% probability PCIe finger contact failure). **Solution Update**: Clean fingers (35% success) → Replace Gen4-certified Riser (70% success) → Direct motherboard test (100% diagnostic accuracy).',
   '',
   '---',
   '',
@@ -1776,6 +1755,218 @@ const TIMELINE_EVENTS = [
       '✅ 證據 5：GPU 完全從 PCI 樹消失',
       '🎯 根本原因：Lian Li Q58 Riser 無法穩定支援 Gen4 長時間運作',
       '💡 立即解決方案：BIOS 強制 PCIe Gen3（0 成本，98% 成功率，效能影響 <3%）'
+    ],
+    type: 'milestone',
+    icon: CheckCircle2
+  },
+];
+
+// English timeline events data
+const TIMELINE_EVENTS_EN = [
+  {
+    date: '7/24',
+    title: 'Posted Bounty for Help',
+    content: 'Described DXGI HANG and environment details.',
+    type: 'milestone',
+    icon: AlertCircle
+  },
+  {
+    date: '8/3',
+    title: 'Remote Display Output',
+    content: 'Using GLKVM instead of physical monitor/HDMI dummy, convenient for remote access and BIOS.',
+    type: 'feature',
+    icon: Zap
+  },
+  {
+    date: '8/6',
+    title: 'lm-sensors Fix',
+    content: 'Published lm-sensors fix report (nct6775 force_id=0xd802) for fan/temperature monitoring, made permanent.',
+    type: 'fix',
+    icon: CheckCircle2
+  },
+  {
+    date: '8/9',
+    title: 'NUT Delayed Shutdown Strategy',
+    content: 'Published NUT delayed shutdown strategy and management script nut-delay-manager.sh, changed from "power loss immediate shutdown" to "timed delayed shutdown".',
+    type: 'feature',
+    icon: Zap
+  },
+  {
+    date: '8/9',
+    title: 'Audio Feedback',
+    content: 'Using Apollo, audio driver auto-switches to Steam Streaming, tested without crackling.',
+    type: 'test',
+    icon: CheckCircle2
+  },
+  {
+    date: '8/10',
+    title: 'UPS Measurement Data',
+    content: 'Posted upsc measurement data (1500VA/900W, current load ~17%), discussed lead-acid battery lifespan and discharge strategy.',
+    type: 'test',
+    icon: Calendar
+  },
+  {
+    date: '9/25',
+    title: 'GRUB & BIOS ASPM Settings',
+    content: 'Added GRUB parameter adjustment and BIOS ASPM settings: Added pcie_aspm=off in GRUB to disable PCIe Active State Power Management, set ASPM to OFF in BIOS to further improve GPU passthrough stability.',
+    type: 'feature',
+    icon: Zap
+  },
+  {
+    date: '9/26',
+    title: 'Final Integration Guide',
+    content: 'Published final integration guide: Systematic optimization from Host to VM and debugging; completed core pinning and driver switching automation; GPU utilization reached ~97%. Added nvidia-drm.modeset=0 explanation and steps. Confirmed BIOS Resizable BAR set to OFF.',
+    type: 'milestone',
+    icon: CheckCircle2
+  },
+  {
+    date: '9/27 Evening',
+    title: 'NVIDIA Driver Blacklist Optimization',
+    content: 'Added NVIDIA driver blacklist optimization settings, including nvidia_modeset, nvidia_uvm, nvidia_drm modules to ensure stable switching between VFIO and NVIDIA drivers.',
+    type: 'feature',
+    icon: Zap
+  },
+  {
+    date: '9/28',
+    title: 'Long-haul Test Flight',
+    content: 'Started PMDG 777F long-haul test flight (Tokyo Haneda RJTT → Dubai OMDB) to verify system stability and performance under high-load long-duration operation.',
+    type: 'test',
+    icon: Calendar
+  },
+  {
+    date: '9/28',
+    title: 'Long-haul Test Finding',
+    content: 'During PMDG 777F test, found that triggering game pause menu easily causes VFIO reset/restore bar issue.',
+    details: [
+      'Further narrowed to Windows Event Viewer NVIDIA TOPPS related errors',
+      'Community reports suggest potential display memory management issue',
+      'Testing confirmed hookscript not the source, investigation ongoing',
+      'OCCT stability test: 80% display memory stress test passed 40+ rounds without anomalies, confirmed display memory stability',
+      'memtest86+ test: System memory passed (PASS), confirmed memory stability'
+    ],
+    type: 'issue',
+    icon: AlertCircle
+  },
+  {
+    date: '9/29',
+    title: 'Advanced Testing & Solution Validation',
+    content: 'Issue shows clear time-dependent characteristics, triggering pause menu after ~1 hour stable operation induces VFIO reset/restore bar errors.',
+    details: [
+      'OCCT mixed load test: Operating normally',
+      'OCCT 3D+VRAM test only: 33 minutes continuous operation normal',
+      'Initial conclusion: Issue only triggers in specific game scenarios, not reproducible in pure hardware stress tests',
+      'Likely involves game engine specific DirectX call patterns or rendering pipeline state transitions',
+      '❌ Tested Windows Registry DisableIdlePowerManagement: Ineffective',
+      '❌ Tested NVIDIA Profile Inspector power settings: Ineffective',
+      'Root cause investigation ongoing'
+    ],
+    type: 'issue',
+    icon: AlertCircle
+  },
+  {
+    date: '9/30',
+    title: 'PCIe Hardware Investigation Complete',
+    content: 'Executed full PCIe diagnostics, confirmed hardware layer completely normal.',
+    details: [
+      '✅ PCIe error counts: All zero (DevSta: CorrErr- NonFatalErr- FatalErr- UnsupReq-)',
+      '✅ Link speed: 16GT/s (PCIe 4.0 full speed)',
+      '✅ Link width: x16 (full width)',
+      '✅ AER error records: No anomalies',
+      'Conclusion: 100% ruled out PCIe Riser hardware issue',
+      'Confirmed root cause in virtualization software layer (VFIO and NVIDIA TOPPS compatibility)',
+      'Next step: Test VM-level adjustments (KVM hidden + MSR ignore)'
+    ],
+    type: 'fix',
+    icon: CheckCircle2
+  },
+  {
+    date: '9/30',
+    title: '🚨 Major Discovery: PCIe Device Disappearance',
+    content: 'When issue occurs, GPU device completely disappears from lspci, fundamentally changing problem nature.',
+    details: [
+      '🔍 Key finding: lspci command cannot find 01:00.0 GPU device',
+      'Analysis conclusion: GPU enters D3cold deep sleep and cannot wake',
+      'Result: PCIe link down → device completely disappears from system',
+      'Problem nature: Upgraded from "software compatibility" to "PCIe power state management failure"',
+      'Solution direction adjusted: Prevent GPU from entering deep sleep (disable_idle_d3 + Runtime PM)',
+      'Ruled out concern: Not VRAM failure (OCCT test passed, error message doesn\'t match memory issue characteristics)',
+      'Immediate action: Add disable_idle_d3=1, start testing'
+    ],
+    type: 'milestone',
+    icon: AlertCircle
+  },
+  {
+    date: '9/30',
+    title: 'Testing disable_idle_d3 Solution',
+    content: 'Based on PCIe device disappearance finding, added disable_idle_d3=1 parameter to prevent GPU from entering deep sleep.',
+    details: [
+      'Applied: disable_idle_d3=1 (VFIO module parameter)',
+      'Confirmed: pcie_aspm.policy=performance (existing setting)',
+      'Confirmed: kvm.ignore_msrs=1 (existing setting)',
+      'Test goal: Verify if can prevent GPU from entering D3cold state',
+      'Monitoring focus: Whether lspci still disappears, whether VFIO reset still triggers',
+      'Test plan: Long-haul flight test (1.5+ hours), frequent pause menu'
+    ],
+    type: 'test',
+    icon: Calendar
+  },
+  {
+    date: '10/1',
+    title: '❌ disable_idle_d3 Solution Test Failed',
+    content: 'After long-term testing, confirmed disable_idle_d3=1 parameter cannot solve issue in this environment.',
+    details: [
+      '⏰ 07:37 - Triggered pause menu, operating normally',
+      '⏰ 07:41 - Only 4 minutes later, still experienced PCIe link down error',
+      '❌ Conclusion: disable_idle_d3=1 parameter ineffective in this environment',
+      '📊 Consistent with community reports: Some environments "ineffective or makes it worse"',
+      '🎯 Root cause confirmed: D3cold power management failure',
+      '💡 Next step: Requires more aggressive control measures (Runtime PM dual control)'
+    ],
+    type: 'issue',
+    icon: AlertCircle
+  },
+  {
+    date: '10/1',
+    title: '⏳ Testing: Windows VM ASPM Disable',
+    content: 'Control power management from inside VM, disabled GPU ASPM via Device Manager.',
+    details: [
+      '🎯 Solution: Windows Device Manager disable Link State Power Management',
+      '🔄 Strategy: Dual protection (Host pcie_aspm=off + VM internal ASPM disable)',
+      '📊 Test goal: Verify if VM-level power control is effective',
+      '🔍 Monitoring focus: Whether lspci device disappears, whether VFIO reset triggers',
+      '⏱️ Test plan: MSFS 1.5 hours, frequent pause after 1 hour',
+      '💡 If effective: Proves issue at VM/GPU interaction level rather than pure Host VFIO'
+    ],
+    type: 'test',
+    icon: Calendar
+  },
+  {
+    date: '10/1 Noon',
+    title: '🔍 3DMark Test Reveals Critical Clue',
+    content: 'Executed stability test, discovered baseline stability issue and historical evidence.',
+    details: [
+      '📊 3DMark Time Spy Stress Test (20 loops)',
+      '❌ Stability: 88.7% (normal should be ≥97%)',
+      '🔍 Key finding: Confirmed baseline stability issue exists',
+      '💡 Historical evidence surfaced: Windows bare-metal had continuous HDMI flickering (TDR events)',
+      '📌 Conclusion: PCIe signal errors pre-existing',
+      '⚠️ VFIO environment: Lacks Windows TDR fault tolerance, causing direct failure'
+    ],
+    type: 'milestone',
+    icon: AlertCircle
+  },
+  {
+    date: '10/1 Afternoon',
+    title: '🎯 Root Cause Confirmed: PCIe Gen4 Signal Integrity Insufficient',
+    content: 'Synthesizing all evidence, confirmed root cause as Riser cannot stably support Gen4.',
+    details: [
+      '✅ Evidence 1: 3DMark stability only 88.7%',
+      '✅ Evidence 2: Historical HDMI flickering (TDR events)',
+      '✅ Evidence 3: BadTLP + CorrErr errors',
+      '✅ Evidence 4: Pause menu 100% triggers',
+      '✅ Evidence 5: GPU completely disappears from PCI tree',
+      '🎯 Root cause: Lian Li Q58 Riser cannot stably support Gen4 long-term operation',
+      '💡 Immediate solution: BIOS force PCIe Gen3 (zero cost, 98% success rate, <3% performance impact)'
     ],
     type: 'milestone',
     icon: CheckCircle2
@@ -2469,14 +2660,26 @@ function runSelfTests() {
 
 // 分割 Markdown 內容，提取時間線章節
 function splitMarkdownForTimeline(markdown) {
-  const timelineStart = markdown.indexOf('## 時間線（重點事件）');
+  // 支援中文和英文標題
+  const timelineHeaders = ['## 時間線（重點事件）', '## Timeline (Key Events)'];
+  let timelineStart = -1;
+  let timelineHeader = '';
+
+  for (const header of timelineHeaders) {
+    const index = markdown.indexOf(header);
+    if (index !== -1) {
+      timelineStart = index;
+      timelineHeader = header;
+      break;
+    }
+  }
 
   if (timelineStart === -1) {
     return { before: markdown, timeline: null, after: '' };
   }
 
   // 找到下一個 h2 標題作為時間線章節的結束
-  const afterTimelineStart = timelineStart + '## 時間線（重點事件）'.length;
+  const afterTimelineStart = timelineStart + timelineHeader.length;
   const nextH2Match = markdown.slice(afterTimelineStart).match(/\n## /);
   const timelineEnd = nextH2Match
     ? afterTimelineStart + nextH2Match.index
@@ -2850,9 +3053,11 @@ export default function ReportSite() {
 
               {/* 渲染時間線組件 - 優化：增加視覺分隔 */}
               {timeline && (
-                <div id="時間線重點事件" className="scroll-mt-24 my-12">
-                  <h2 className="text-2xl sm:text-3xl font-bold mt-12 mb-6 text-slate-900 dark:text-white">時間線（重點事件）</h2>
-                  <Timeline events={TIMELINE_EVENTS} />
+                <div id={lang === 'en' ? 'timeline-key-events' : '時間線重點事件'} className="scroll-mt-24 my-12">
+                  <h2 className="text-2xl sm:text-3xl font-bold mt-12 mb-6 text-slate-900 dark:text-white">
+                    {lang === 'en' ? 'Timeline (Key Events)' : '時間線（重點事件）'}
+                  </h2>
+                  <Timeline events={lang === 'en' ? TIMELINE_EVENTS_EN : TIMELINE_EVENTS} />
                 </div>
               )}
 
