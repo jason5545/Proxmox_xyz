@@ -3,7 +3,7 @@ import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { motion } from "framer-motion";
-import { Download, Moon, SunMedium, FileDown, Clipboard, BugPlay, Calendar, CheckCircle2, AlertCircle, Zap } from "lucide-react";
+import { Download, Moon, SunMedium, FileDown, Clipboard, BugPlay, Calendar, CheckCircle2, AlertCircle, Zap, Languages } from "lucide-react";
 import { marked } from "marked";
 
 // -----------------------------
@@ -14,10 +14,11 @@ import { marked } from "marked";
 // -----------------------------
 
 const STORAGE_KEY = "msfs_report_markdown_v1";
-const TITLE_DEFAULT = "從 DXGI 錯誤到 97% 效能 — Proxmox VFIO 終極最佳化實錄";
+const TITLE_DEFAULT_ZH = "從 DXGI 錯誤到 97% 效能 — Proxmox VFIO 終極最佳化實錄";
+const TITLE_DEFAULT_EN = "From DXGI Error to 97% Performance — The Ultimate Proxmox VFIO Optimization Journey";
 
 // 使用陣列 join，避免模板字面值中含有反引號(`)造成語法錯誤
-const INITIAL_MD = [
+const INITIAL_MD_ZH = [
   '# 你的 LowEndTalk 討論整理報告',
   '',
   '> 主題：**MSFS on Proxmox with GPU Passthrough (DXGI HANG) — $100 Bounty**',
@@ -1205,6 +1206,370 @@ const INITIAL_MD = [
   '  4) 定期進行長程測試航班，確保系統在真實使用情境下的可靠性。',
 ].join('\n');
 
+const INITIAL_MD_EN = [
+  '# LowEndTalk Discussion Summary Report',
+  '',
+  '> Topic: **MSFS on Proxmox with GPU Passthrough (DXGI HANG) — $100 Bounty**',
+  '',
+  '---',
+  '',
+  '## Executive Summary (TL;DR)',
+  '- **Original Issue**: When passing through RTX 4070 Ti Super to Windows VM via VFIO on Proxmox VE, MSFS 2024/2020 triggers GPU complete disappearance (device not found in lspci) after long runtime when accessing pause menu.',
+  '- **Root Cause**: **Riser Hardware Composite Defect** (85% probability: PCIe finger contact failure + Gen4 signal quality degradation)',
+  '- **Key Finding**: PCIe Gen3 downgrade only improves signal quality (3DMark stability +4.5%), cannot fix physical connection defect (MSFS pause menu still 100% triggers GPU disappearance)',
+  '- **Final Solutions**:',
+  '  1) **Immediate Diagnosis**: Clean PCIe fingers and reseat (zero cost, 35% success rate)',
+  '  2) **Recommended**: Replace with Gen4-certified Riser (NT$1,200-1,500, 70% success rate)',
+  '  3) **Ultimate Confirmation**: Direct motherboard connection test (NT$500-1,000, 100% diagnostic accuracy)',
+  '  4) **Temporary Mitigation**: Force PCIe Gen3 in BIOS (improves stability +4.5%, but incomplete fix)',
+  '  5) **Basic Optimization**: Replace excessive blacklist with **softdep**, use **hookscript** for GPU reset/rebind',
+  '  6) **Performance Optimization**: Pin game threads to **V-Cache CCD** (core pinning + NUMA)',
+  '',
+  'Result: **GPU utilization ~97%**.',
+  '',
+  '---',
+  '',
+  '## 🎯 Root Cause Analysis (Ongoing Updates)',
+  '',
+  '> **Root Cause**: **Riser Hardware Composite Defect**  ',
+  '> - **Primary Issue** (85% probability): PCIe finger contact failure  ',
+  '> - **Secondary Issue** (100% confirmed): Gen4 signal quality degradation  ',
+  '> **Confidence Level**: 85% (based on Gen3 test results)  ',
+  '> **Recommended Solution**: Replace with Gen4-certified Riser (70% success probability)',
+  '',
+  '### Evidence Chain (Updated 10/2)',
+  '',
+  '| Evidence Type | Observation | Root Cause | Confidence Change |',
+  '|--------------|-------------|------------|-------------------|',
+  '| **Gen3 Downgrade Test** | 3DMark stability 88.7% → 93.2% (+4.5%) | Gen4 signal quality degradation (confirmed) | ✅ Confirmed |',
+  '| **Gen3 Downgrade Test** | MSFS pause menu still 100% triggers GPU loss | **Physical connection defect** (Gen3 cannot fix) | ⚠️ **New Finding** |',
+  '| **Gen3 Stability** | Still below normal 97% (gap -3.8%) | Physical defect causes partial Lane instability | ⚠️ **New Finding** |',
+  '| Stress Test | 3DMark stability only 88.7% (normal ≥97%) | Long-term signal degradation | ✅ Confirmed |',
+  '| Historical Evidence | Windows bare-metal HDMI flickering (TDR events) | PCIe signal errors pre-existing | ✅ Confirmed |',
+  '| PCIe Errors | BadTLP, CorrErr (corrected) | Gen4 bit error rate too high | ✅ Confirmed |',
+  '| Trigger Mechanism | Pause menu 100% triggers | Power state transition causes Link Retraining failure | ✅ Confirmed |',
+  '| Device Loss | `lspci` cannot find GPU | Link Retraining failure → PCIe Link Down | ✅ Confirmed |',
+  '| Windows vs VFIO | Windows TDR recoverable, VFIO unrecoverable | VFIO cannot physically power-cycle to reset contact state | ⚠️ **New Finding** |',
+  '',
+  '### Why is VFIO Environment More Severe?',
+  '',
+  '**Environment Comparison**:',
+  '',
+  '| Environment | Error Occurrence | Recovery Mechanism | User Experience |',
+  '|------------|------------------|-------------------|-----------------|',
+  '| Windows Bare-metal | PCIe signal error | TDR mechanism: multiple soft reset attempts within 2s | HDMI flickers 2s then recovers |',
+  '| Proxmox VFIO | Same signal error | One-time FLR/Bus Reset, gives up if failed | GPU completely disappears, requires reboot |',
+  '',
+  '**Key Difference**:',
+  '',
+  '- **Windows Driver** (gradual recovery):',
+  '  1. Attempts soft reset GPU engine',
+  '  2. Attempts soft reset display pipeline',
+  '  3. Attempts D3hot power cycle',
+  '  4. Gives up after multiple attempts',
+  '',
+  '- **VFIO** (one-shot attempt):',
+  '  1. Detects error',
+  '  2. Attempts one FLR or Secondary Bus Reset',
+  '  3. Marks device as dead and removes if failed',
+  '',
+  'In "marginal signal quality" environments, Windows driver has a chance to recover, but VFIO fails directly.',
+  '',
+  '---',
+  '',
+  '## Environment & Objectives',
+  '- **Motherboard**: ROG STRIX B650‑I  ',
+  '- **CPU**: Ryzen 9 9950X3D  ',
+  '- **GPU (Passthrough)**: ASUS Dual RTX 4070 Ti Super OC 16G  ',
+  '- **Memory**: 96 GB  ',
+  '- **Hypervisor**: Proxmox VE 8.4 (with PVE 9/new kernel notes)  ',
+  '- **Objective**: Use PVE as primary system, run MSFS on Win11 gaming VM via GPU Passthrough, replacing bare-metal Windows.',
+  '',
+  '---',
+  '',
+  '## Timeline (Key Events)',
+  '- **7/24**: Posted bounty for help, described DXGI HANG and environment details.',
+  '- **8/3**: Shared remote display output: Using **GLKVM** instead of physical monitor/HDMI dummy, convenient for remote access and BIOS.',
+  '- **8/6**: Published lm-sensors fix report (`nct6775 force_id=0xd802`) for fan/temperature monitoring, made permanent.',
+  '- **8/9**: Published **NUT delayed shutdown strategy** and management script `nut-delay-manager.sh`, changed from "power loss immediate shutdown" to "timed delayed shutdown".',
+  '- **8/9**: Audio feedback: Using **Apollo**, audio driver auto-switches to **Steam Streaming**, tested without crackling.',
+  '- **8/10**: Posted **`upsc`** measurement data (1500VA/900W, current load ~17%), discussed lead-acid battery lifespan and discharge strategy.',
+  '- **9/25**: Added **GRUB parameter adjustment** and **BIOS ASPM settings**: Added `pcie_aspm=off` in GRUB to disable PCIe Active State Power Management, set ASPM to OFF in BIOS to further improve GPU passthrough stability.',
+  '- **9/26**: Published **final integration guide**: Systematic optimization from Host to VM and debugging; completed **core pinning** and **driver switching automation**; GPU utilization reached ~97%. Added `nvidia-drm.modeset=0` explanation and steps. Confirmed BIOS **Resizable BAR set to OFF**.',
+  '- **9/27 Evening**: Added **NVIDIA driver blacklist** optimization settings, including `nvidia_modeset`, `nvidia_uvm`, `nvidia_drm` modules to ensure stable switching between VFIO and NVIDIA drivers.',
+  '- **9/28**: Started **PMDG 777F long-haul test flight** (Tokyo Haneda RJTT → Dubai OMDB) to verify system stability and performance under high-load long-duration operation.',
+  '- **9/28 Long-haul Test Finding**: During **PMDG 777F** test, found that triggering game pause menu easily causes **VFIO reset/restore bar** issue. Further narrowed to **Windows Event Viewer** **NVIDIA TOPPS** related errors. Community reports suggest potential **display memory management** issue. Testing confirmed **hookscript not the source**, investigation ongoing. **OCCT stability test**: 80% display memory stress test passed 40+ rounds without anomalies. **memtest86+ test**: System memory passed, confirmed stable.',
+  '- **9/29 Advanced Testing & Solution Validation**: Issue shows clear time-dependent characteristics, triggering pause menu after ~1 hour stable operation induces VFIO reset/restore bar errors. OCCT mixed load and 3D+VRAM tests (33 min continuous) ran normally, showing issue only triggers in specific game scenarios, not reproducible in pure hardware stress tests. Tested Windows Registry DisableIdlePowerManagement and NVIDIA Profile Inspector power settings, both ineffective. Root cause investigation ongoing.',
+  '- **9/30 Hardware Investigation Complete**: Executed full PCIe diagnostics, confirmed hardware layer completely normal: error counts all zero (`DevSta: CorrErr- NonFatalErr- FatalErr-`), link speed 16GT/s (PCIe 4.0 full speed), width x16, no AER error records. **100% ruled out PCIe Riser hardware issue**, confirmed root cause in virtualization software layer (VFIO and NVIDIA TOPPS compatibility). Created complete PCIe diagnostic command chapter for future reference.',
+  '- **9/30 Major Discovery: PCIe Device Disappearance**: Further investigation revealed when issue occurs, **`lspci` command cannot find GPU device** (01:00.0 disappears from system). This indicates not just driver error, but **GPU enters D3cold deep sleep and cannot wake, causing PCIe link down**. This finding fundamentally changes issue nature: from software compatibility to **PCIe power state management problem**. Solution direction adjusted to: prevent GPU from entering deep sleep (disable_idle_d3 + Runtime PM control).',
+  '- **9/30 Testing disable_idle_d3 Solution**: Based on PCIe device loss finding, immediately added `disable_idle_d3=1` VFIO module parameter to prevent GPU from entering D3cold deep sleep. Combined with existing `pcie_aspm.policy=performance` and `kvm.ignore_msrs=1` settings, started long-term validation. Monitoring focus: whether lspci still loses device, whether VFIO reset still triggers.',
+  '- **10/1 Test Result: disable_idle_d3 Solution Ineffective**: After long-term testing, 07:37 pause menu triggered normally, but 07:41 (only 4 minutes later) still experienced PCIe link down error. **Confirmed `disable_idle_d3=1` parameter cannot solve issue in this environment**, consistent with some community reports of "ineffective or makes it worse". Root cause confirmed as D3cold power management, but requires more aggressive control.',
+  '- **10/1 Plan B Activated: Runtime PM Dual Control**: Preparing more direct power management solution: via hookscript disable both `d3cold_allowed` and set `power/control=on` when VM starts, completely preventing GPU from entering any deep sleep state. This solution will directly control PCIe device power state at Host level, not relying on VFIO module parameters.',
+  '- **10/1 Testing: Windows VM ASPM Disable**: After disable_idle_d3 failed, attempting control from VM internal. Disabled GPU Link State Power Management (ASPM) via Windows Device Manager, forming dual protection with Host `pcie_aspm=off`. Testing if VM-level power state control can prevent GPU deep sleep; if effective, proves issue at VM/GPU interaction level rather than pure Host VFIO problem.',
+  '- **10/1 Noon: 3DMark Stability Test Reveals Critical Clue**: Executed 3DMark Time Spy Stress Test (20 loops), stability only **88.7%** (normal ≥97%), confirmed baseline stability issue. More critically, **historical evidence surfaced**: recalled Windows bare-metal had **continuous HDMI flickering** (TDR events), proving **PCIe signal errors pre-existing**, but VFIO environment fails directly due to lack of Windows TDR fault tolerance.',
+  '- **10/1 Afternoon: Root Cause Confirmed — PCIe Gen4 Signal Integrity Insufficient**: Synthesizing all evidence (3DMark 88.7%, historical HDMI flicker, BadTLP/CorrErr errors, GPU complete loss), confirmed root cause as **Lian Li Q58 included Riser cannot stably support PCIe Gen4 long-term operation**. Gen4 extremely sensitive to impedance continuity, differential pair symmetry, EMI shielding on 200mm extension cable; exceeds tolerance under "long-term high load + power surge" combination. **Immediate solution**: Force PCIe Gen3 in BIOS (zero cost, 98% expected success rate, <3% performance impact).',
+  '- **10/2: PCIe Gen3 Complete Test — Composite Defect Discovered**: After forcing Gen3 in BIOS, executed complete testing, hardware confirmed `current_link_speed = 8.0 GT/s` (Gen3 effective). **3DMark stability improved to 93.2%** (vs Gen4 88.7%, +4.5% improvement), but **still below normal 97%** (gap -3.8%). **Key Finding**: MSFS pause menu issue **completely unchanged** (still 100% triggers GPU loss), proving Gen3 downgrade only improves "signal quality", cannot fix "physical connection defect". **Problem Nature Repositioned**: from "signal integrity insufficient" corrected to "**Riser Hardware Composite Defect**" (85% probability PCIe finger contact failure). **Solution Update**: Clean fingers (35% success) → Replace Gen4-certified Riser (70% success) → Direct motherboard test (100% diagnostic accuracy).',
+  '',
+  '---',
+  '',
+  '## 💡 Solutions & Implementation Steps',
+  '',
+  '### Solution Under Test: Force PCIe Gen3 (Partial Improvement)',
+  '',
+  '> ⚠️ **Test Result Update (10/2)**: Gen3 downgrade only **partially improves** the issue, cannot completely resolve it.',
+  '',
+  '**Test Results**:',
+  '- ✅ 3DMark stability: 88.7% → **93.2%** (improved +4.5%)',
+  '- ❌ MSFS pause menu: issue **completely unchanged** (still 100% triggers GPU loss)',
+  '- ⚠️ Gap from normal: still below 97% (gap -3.8%)',
+  '',
+  '**Conclusion**:',
+  '- Gen3 can improve "signal quality issues"',
+  '- But **cannot fix "physical connection defects"**',
+  '- Expected MSFS pause menu still triggers GPU loss (probability reduced but not eliminated)',
+  '',
+  '**Solution Features**:',
+  '- ⚠️ Expected effect: **Partial improvement** (stability +5%)',
+  '- ✅ Performance impact: <3% (imperceptible)',
+  '- ✅ Implementation cost: Zero',
+  '- ✅ Implementation time: 10 minutes',
+  '',
+  '**BIOS Settings Path** (ASUS ROG STRIX B650E-I):',
+  '',
+  '```',
+  'Advanced',
+  '  → PCIe/PCI/PnP Configuration',
+  '    → PCIe Slot 1 Link Speed',
+  '      → Set to "Gen3" or "Force Gen3"',
+  '',
+  'Save & Exit: Press F10',
+  '```',
+  '',
+  '**Verification Commands** (Proxmox Host):',
+  '',
+  '```bash',
+  '# Verify Link Speed',
+  'lspci -vvv -s 01:00.0 | grep "LnkSta:"',
+  '# Expected output: Speed 8GT/s (ok), Width x16 (ok)',
+  '',
+  '# Real-time PCIe error monitoring',
+  'sudo journalctl -kf | grep -i "pci\\|vfio\\|01:00"',
+  '```',
+  '',
+  '### Recommended Diagnostic Solutions (Priority Order)',
+  '',
+  '#### 🥇 Priority 1: Clean PCIe Fingers (Execute Immediately)',
+  '',
+  '**Test Purpose**: Rule out oxidation/contact failure',
+  '',
+  '**Implementation Steps**:',
+  '```markdown',
+  '1. Clean Riser both ends fingers with 99% isopropyl alcohol (IPA)',
+  '2. Gently wipe fingers with eraser (remove oxidation layer)',
+  '3. Wipe dry with lint-free cloth',
+  '4. Reseat 5 times (ensure stable contact)',
+  '5. Run 3DMark Time Spy Stress Test for verification',
+  '```',
+  '',
+  '**Expected Cost**: NT$ 0 (assuming alcohol available)  ',
+  '**Expected Time**: 1 hour  ',
+  '**Success Rate**: **35%**',
+  '',
+  '**If Successful** (3DMark ≥97% + MSFS normal):',
+  '- Confirmed PCIe finger oxidation or contact failure',
+  '- Recommend regular cleaning (every 3-6 months)',
+  '- Consider long-term high-quality Riser replacement',
+  '',
+  '**If Failed** (issue persists):',
+  '- Proceed to Priority 2',
+  '',
+  '#### 🥈 Priority 2: Replace Gen4-Certified Riser',
+  '',
+  '**Test Purpose**: Completely rule out Riser-related issues',
+  '',
+  '**Recommended Models**:',
+  '- **ADT-Link R43SG** (Gen4 dedicated design, gold-plated contacts, shielded cable)',
+  '- **Linkup Ultra PCIe 4.0** (Gen4 certified, flexible design)',
+  '- **3M 8KC3 Series** (industrial-grade quality, budget permitting)',
+  '',
+  '**Expected Cost**: NT$ 1,200-1,500  ',
+  '**Expected Time**: 2 hours (purchase + replace + test)  ',
+  '**Success Rate**: **70%**',
+  '',
+  '**If Successful** (3DMark ≥97% + MSFS normal):',
+  '- Confirmed Lian Li Q58 included Riser hardware defect',
+  '- Problem permanently resolved',
+  '- Can choose to keep Gen3 or restore Gen4 full speed',
+  '',
+  '**If Failed** (issue persists):',
+  '- Proceed to Priority 3',
+  '',
+  '#### 🥉 Priority 3: Direct Motherboard Connection Test (Ultimate Confirmation)',
+  '',
+  '**Test Purpose**: 100% determine problem source',
+  '',
+  '**Implementation Options**:',
+  '```markdown',
+  'Option A: Original Building Store Disassembly Test (Recommended)',
+  '  - Request technical assistance for testing',
+  '  - Use large case for temporary testing',
+  '  - Run 3DMark + MSFS tests',
+  '  - Cost: NT$ 500-1,000 (labor fee)',
+  '',
+  'Option B: Self Bare Testing (Requires test platform)',
+  '  - Temporary test platform or borrow large case',
+  '  - Cost: 0 (but inconvenient)',
+  '```',
+  '',
+  '**Expected Cost**: NT$ 500-1,000  ',
+  '**Expected Time**: Half day (round trip + testing)  ',
+  '**Success Rate**: **90%** (most accurate diagnostic method)',
+  '',
+  '**If Successful** (direct connection 3DMark ≥97% + MSFS normal):',
+  '- **100% confirmed Riser problem**',
+  '- Must replace high-quality Riser (Priority 2)',
+  '- Or switch to case supporting direct connection (higher cost)',
+  '',
+  '**If Failed** (direct connection issue persists):',
+  '- Problem in GPU PCIe interface (50%) or motherboard slot (50%)',
+  '- Further diagnosis needed: borrow-test other GPU or replace motherboard',
+  '',
+  '### Recommended Execution Order',
+  '',
+  '**Phase 1: Low-Cost Diagnosis** (zero cost, 1 hour)',
+  '```markdown',
+  '1. Clean PCIe fingers and reseat (Priority 1)',
+  '   - If successful → Problem solved, regular maintenance',
+  '   - If failed → Proceed to Phase 2',
+  '```',
+  '',
+  '**Phase 2: Replace Riser** (NT$ 1,200-1,500, most effective)',
+  '```markdown',
+  '2. Purchase and replace Gen4-certified Riser (Priority 2)',
+  '   - If successful → Problem permanently solved',
+  '   - If failed → Proceed to Phase 3',
+  '```',
+  '',
+  '**Phase 3: Ultimate Diagnosis** (NT$ 500-1,000, final confirmation)',
+  '```markdown',
+  '3. Original Building Store direct motherboard test (Priority 3)',
+  '   - If successful → Confirmed Riser problem, must replace',
+  '   - If failed → GPU or motherboard issue, further diagnosis needed',
+  '```',
+  '',
+  '**Total Budget (worst case)**: NT$ 1,700-2,500  ',
+  '**Total Time (worst case)**: 1 day',
+  '',
+  '---',
+  '',
+  '## 🔬 Testing Items (NVIDIA TOPPS Issue)',
+  '',
+  '> **Issue Core**: Game pause menu triggers VFIO reset/restore bar, stems from NVIDIA TOPPS (power state management) incompatibility with virtualization environment',
+  '',
+  '> **🚨 9/30 Major Discovery**: When issue occurs, **GPU device completely disappears from `lspci`**, indicating GPU **enters D3cold deep sleep and cannot wake**, causing PCIe link down. Not merely driver error, but **PCIe power state management failure**.',
+  '',
+  '### Problem Analysis',
+  '',
+  '> ⚠️ **10/2 Update**: Root cause confirmed as **Riser Hardware Composite Defect** (see Root Cause Analysis section above)',
+  '',
+  '- **Items Ruled Out**:',
+  '  - ✅ Hardware stable (OCCT, memtest86+ passed)',
+  '  - ✅ hookscript functioning normally',
+  '  - ✅ Display memory no anomalies',
+  '  - ✅ Basic performance (97% GPU utilization)',
+  '  - ✅ Pure VFIO software issue (Gen3 hardware test still fails)',
+  '- **Core Problem** (9/30 update):',
+  '  ```',
+  '  Game pause → GPU power state P0→P8→D3cold',
+  '  → PCIe link down → Device disappears from system (lspci cannot find)',
+  '  → Cannot wake → Requires PCIe rescan',
+  '  ```',
+  '',
+  '---',
+  '',
+  '## 🔬 Final Configuration Summary',
+  '',
+  '### Host-Level Optimization (Proxmox)',
+  '',
+  '**1. Kernel Parameters** (`/etc/default/grub`):',
+  '```bash',
+  'GRUB_CMDLINE_LINUX_DEFAULT="quiet amd_iommu=on iommu=pt pcie_acs_override=downstream,multifunction pcie_aspm=off nvidia-drm.modeset=0 kvm.ignore_msrs=1"',
+  '```',
+  '',
+  '**2. VFIO Configuration** (`/etc/modprobe.d/vfio.conf`):',
+  '```bash',
+  'options vfio-pci ids=10de:2705,10de:22bb',
+  'softdep nvidia pre: vfio-pci',
+  'softdep nvidia_modeset pre: vfio-pci',
+  'softdep nvidia_uvm pre: vfio-pci',
+  'softdep nvidia_drm pre: vfio-pci',
+  '```',
+  '',
+  '**3. Blacklist Configuration** (`/etc/modprobe.d/blacklist.conf`):',
+  '```bash',
+  'blacklist nouveau',
+  'blacklist nvidia',
+  'blacklist nvidia_modeset',
+  'blacklist nvidia_uvm',
+  'blacklist nvidia_drm',
+  '```',
+  '',
+  '**4. GPU Hookscript** (`/var/lib/vz/snippets/gpu-manager.sh`):',
+  '- Pre-start: Unbind from vfio-pci, reset GPU, rebind to vfio-pci',
+  '- Post-stop: Unbind from vfio-pci, reset GPU, rebind to driver',
+  '',
+  '### VM-Level Optimization',
+  '',
+  '**1. CPU Pinning** (cores 16-31 to V-Cache CCD)',
+  '**2. NUMA Node 1** (matching V-Cache CCD)',
+  '**3. Machine Type**: q35',
+  '**4. CPU Type**: host',
+  '',
+  '### Result',
+  '- **GPU Utilization**: ~97%',
+  '- **System Stability**: Excellent (pending Riser hardware fix)',
+  '- **Performance**: Near bare-metal',
+  '',
+  '---',
+  '',
+  '## 📝 Key Takeaways',
+  '',
+  '1. **Root Cause Identification Critical**: Systematic diagnosis from hardware to software layers;',
+  '2. **Gen3 Downgrade Limitation**: Only improves signal quality, cannot fix physical defects;',
+  '3. **Riser Quality Matters**: Gen4 certification and quality crucial for stable passthrough;',
+  '4. **VFIO vs Bare-metal**: VFIO lacks fault tolerance, hardware stability requirements higher;',
+  '5. **Monitoring & Maintenance**: Regular cleaning and testing ensure long-term stability.',
+  '',
+  '---',
+  '',
+  '## 🎓 Lessons Learned',
+  '',
+  '**For Future Implementations**:',
+  '',
+  '1. **Hardware Selection**:',
+  '   - Prioritize Gen4-certified components for PCIe 4.0 passthrough',
+  '   - Verify Riser quality and specifications before purchase',
+  '   - Consider direct motherboard connection if case allows',
+  '',
+  '2. **Diagnostic Approach**:',
+  '   - Start with low-cost/zero-cost solutions (cleaning, reseating)',
+  '   - Use systematic testing (3DMark baseline, game-specific tests)',
+  '   - Collect comprehensive logs and evidence',
+  '',
+  '3. **VFIO Best Practices**:',
+  '   - Use `softdep` instead of excessive blacklisting',
+  '   - Implement GPU reset/rebind via hookscript',
+  '   - Pin VM to appropriate NUMA node and CPU cores',
+  '   - Disable unnecessary power management features',
+  '',
+  '4. **Long-term Maintenance**:',
+  '   - Regular PCIe contact cleaning (every 3-6 months)',
+  '   - Periodic stress testing to verify stability',
+  '   - Monitor for new kernel/driver updates and compatibility',
+  '',
+  '**Conclusion**: This journey transformed a frustrating DXGI HANG issue into a comprehensive understanding of PCIe signal integrity, VFIO power management, and hardware-software interaction in virtualized GPU passthrough environments. The key lessons: **hardware quality matters**, **systematic diagnosis saves time**, and **understanding root causes leads to permanent solutions**.',
+].join('\n');
+
 // 時間線事件數據
 const TIMELINE_EVENTS = [
   {
@@ -2124,12 +2489,76 @@ function splitMarkdownForTimeline(markdown) {
   };
 }
 
+// UI 文字雙語對照表
+const UI_TEXT = {
+  zh: {
+    title: TITLE_DEFAULT_ZH,
+    subtitle: "MSFS on Proxmox 技術報告",
+    toc: "目錄",
+    exportMD: "匯出 Markdown 檔案",
+    exportHTML: "匯出靜態 HTML 檔案",
+    toggleLight: "切換到淺色模式",
+    toggleDark: "切換到深色模式",
+    techReport: "技術報告",
+    completion: "GPU Passthrough 完整實錄",
+  },
+  en: {
+    title: TITLE_DEFAULT_EN,
+    subtitle: "MSFS on Proxmox Technical Report",
+    toc: "Table of Contents",
+    exportMD: "Export Markdown File",
+    exportHTML: "Export Static HTML File",
+    toggleLight: "Switch to Light Mode",
+    toggleDark: "Switch to Dark Mode",
+    techReport: "Technical Report",
+    completion: "Complete GPU Passthrough Journey",
+  }
+};
+
 export default function ReportSite() {
-  const title = TITLE_DEFAULT;
-  const markdown = INITIAL_MD;
+  // 語言狀態管理：從 hash 和 localStorage 決定語言
+  const getInitialLang = () => {
+    const hash = window.location.hash;
+    if (hash === '#/en') return 'en';
+    if (hash === '#/' || hash === '') return 'zh';
+    const stored = localStorage.getItem('msfs_report_lang');
+    return stored || 'zh';
+  };
+
+  const [lang, setLang] = useState(getInitialLang);
   const [dark, setDark] = useLocalStorage("msfs_report_dark", "1");
 
   const isDark = dark === "1";
+
+  // 根據語言選擇內容
+  const title = lang === 'en' ? TITLE_DEFAULT_EN : TITLE_DEFAULT_ZH;
+  const markdown = lang === 'en' ? INITIAL_MD_EN : INITIAL_MD_ZH;
+  const t = UI_TEXT[lang];
+
+  // 監聽 hash 變化
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      if (hash === '#/en') {
+        setLang('en');
+        localStorage.setItem('msfs_report_lang', 'en');
+      } else if (hash === '#/' || hash === '') {
+        setLang('zh');
+        localStorage.setItem('msfs_report_lang', 'zh');
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // 語言切換函數
+  const toggleLang = () => {
+    const newLang = lang === 'zh' ? 'en' : 'zh';
+    setLang(newLang);
+    localStorage.setItem('msfs_report_lang', newLang);
+    window.location.hash = newLang === 'en' ? '#/en' : '#/';
+  };
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
@@ -2151,14 +2580,19 @@ export default function ReportSite() {
     URL.revokeObjectURL(url);
   };
 
-  const exportMarkdown = () => download("msfs-proxmox-report.md", INITIAL_MD, "text/markdown;charset=utf-8");
+  const exportMarkdown = () => {
+    const filename = lang === 'en' ? "msfs-proxmox-report-en.md" : "msfs-proxmox-report.md";
+    download(filename, markdown, "text/markdown;charset=utf-8");
+  };
 
   const exportHtml = () => {
     // 以 marked 預先轉為靜態 HTML，並內嵌極簡樣式，得到真正「單檔可部署」的網頁
-    const bodyHtml = marked.parse(INITIAL_MD);
+    const bodyHtml = marked.parse(markdown);
     const css = `:root{color-scheme: light dark}body{margin:0;padding:2rem;max-width:980px;margin-inline:auto;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji"}a{color:inherit}pre{overflow:auto;background:#0b1020;color:#e6e6e6;padding:1rem;border-radius:12px}code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace}.prose h1{font-size:2rem;margin-top:1.25rem}.prose h2{font-size:1.5rem;margin-top:1.25rem}.prose h3{font-size:1.25rem;margin-top:1rem}blockquote{padding:.5rem 1rem;border-left:4px solid #999;background:#f7f7f7;border-radius:8px}hr{border:none;border-top:1px solid #ddd;margin:2rem 0}table{border-collapse:collapse}th,td{border:1px solid #ccc;padding:.5rem;border-radius:4px}`;
-    const html = `<!doctype html><html lang="zh-Hant-TW"><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>${title}</title><style>${css}</style><body class="prose"><article>${bodyHtml}</article></body></html>`;
-    download("msfs-proxmox-report.html", html, "text/html;charset=utf-8");
+    const htmlLang = lang === 'en' ? 'en' : 'zh-Hant-TW';
+    const html = `<!doctype html><html lang="${htmlLang}"><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>${title}</title><style>${css}</style><body class="prose"><article>${bodyHtml}</article></body></html>`;
+    const filename = lang === 'en' ? "msfs-proxmox-report-en.html" : "msfs-proxmox-report.html";
+    download(filename, html, "text/html;charset=utf-8");
   };
 
 
@@ -2304,7 +2738,7 @@ export default function ReportSite() {
                   GPU Passthrough
                 </h1>
                 <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mt-0.5">
-                  MSFS on Proxmox 技術報告
+                  {t.subtitle}
                 </p>
               </div>
             </motion.div>
@@ -2316,12 +2750,25 @@ export default function ReportSite() {
               transition={{duration:0.5,ease:"easeOut",delay:0.1}}
               className="flex items-center gap-3"
             >
+              {/* 語言切換 */}
+              <button
+                onClick={toggleLang}
+                className="group relative flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 hover:from-blue-100 hover:to-indigo-100 dark:hover:from-blue-900/30 dark:hover:to-indigo-900/30 transition-all duration-300 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 shadow-md hover:shadow-lg hover:scale-105"
+                title={lang === 'zh' ? 'Switch to English' : '切換到中文'}
+                aria-label={lang === 'zh' ? 'Switch to English' : '切換到中文'}
+              >
+                <div className="flex items-center gap-1">
+                  <Languages size={18} className="text-blue-600 dark:text-blue-400 group-hover:rotate-12 transition-transform duration-300"/>
+                  <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{lang === 'zh' ? 'EN' : 'ZH'}</span>
+                </div>
+              </button>
+
               {/* 主題切換 */}
               <button
                 onClick={()=>setDark(isDark?"0":"1")}
                 className="group relative flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 hover:from-amber-100 hover:to-orange-100 dark:hover:from-amber-900/30 dark:hover:to-orange-900/30 transition-all duration-300 border border-gray-200 dark:border-gray-700 hover:border-amber-300 dark:hover:border-amber-700 shadow-md hover:shadow-lg hover:scale-105"
-                title={isDark?"切換到淺色模式":"切換到深色模式"}
-                aria-label={isDark?"切換到淺色模式":"切換到深色模式"}
+                title={isDark ? t.toggleLight : t.toggleDark}
+                aria-label={isDark ? t.toggleLight : t.toggleDark}
               >
                 {isDark ?
                   <SunMedium size={20} className="text-amber-500 group-hover:rotate-45 transition-transform duration-300"/> :
@@ -2337,7 +2784,7 @@ export default function ReportSite() {
                 <button
                   onClick={exportMarkdown}
                   className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-600 dark:to-blue-700 hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-700 dark:hover:to-blue-800 text-white font-medium text-sm shadow-md hover:shadow-xl hover:scale-105 transition-all duration-200"
-                  title="匯出 Markdown 檔案"
+                  title={t.exportMD}
                 >
                   <FileDown size={18} className="group-hover:-translate-y-0.5 transition-transform duration-200"/>
                   <span className="hidden sm:inline">MD</span>
@@ -2345,7 +2792,7 @@ export default function ReportSite() {
                 <button
                   onClick={exportHtml}
                   className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 dark:from-purple-600 dark:to-purple-700 hover:from-purple-700 hover:to-purple-800 dark:hover:from-purple-700 dark:hover:to-purple-800 text-white font-medium text-sm shadow-md hover:shadow-xl hover:scale-105 transition-all duration-200"
-                  title="匯出靜態 HTML 檔案"
+                  title={t.exportHTML}
                 >
                   <Download size={18} className="group-hover:-translate-y-0.5 transition-transform duration-200"/>
                   <span className="hidden sm:inline">HTML</span>
@@ -2361,7 +2808,7 @@ export default function ReportSite() {
       <div className="mx-auto max-w-[1800px] px-4 sm:px-6 lg:px-8 py-8 lg:py-10">
         <div className="grid grid-cols-1 lg:grid-cols-[300px,1fr] xl:grid-cols-[340px,1fr] gap-6 lg:gap-10">
           {/* TOC - 使用重構後的 TocContainer */}
-          <TocContainer markdown={markdown} title="目錄" />
+          <TocContainer markdown={markdown} title={t.toc} />
 
           {/* Main Content - 清晰簡潔設計 */}
           <main>
@@ -2387,12 +2834,12 @@ export default function ReportSite() {
                 >
                   <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/40 text-blue-700 dark:text-blue-300 font-semibold border border-blue-200 dark:border-blue-700">
                     <FileDown size={16} />
-                    技術報告
+                    {t.techReport}
                   </span>
                   <span className="text-gray-300 dark:text-gray-700">|</span>
                   <span className="font-medium">MSFS on Proxmox</span>
                   <span className="text-gray-300 dark:text-gray-700">|</span>
-                  <span>GPU Passthrough 完整實錄</span>
+                  <span>{t.completion}</span>
                 </motion.div>
               </div>
 
