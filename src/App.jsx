@@ -43,11 +43,11 @@ const INITIAL_MD_ZH = [
   '',
   '## 🎯 問題根因分析（持續更新）',
   '',
-  '> **根本原因**：**Riser 硬體複合性缺陷**  ',
-  '> - **主要問題**（85% 機率）：PCIe 金手指接觸不良  ',
-  '> - **次要問題**（100% 確定）：Gen4 訊號品質劣化  ',
-  '> **信心度**：85%（基於 Gen3 測試結果）  ',
-  '> **建議方案**：更換 Gen4 認證 Riser（70% 機率完全解決）',
+  '> **根本原因**：**PCIe 延長線氧化接觸不良**  ',
+  '> - **問題本質**：PCIe 延長線金手指氧化，導致接觸不良  ',
+  '> - **解決方法**：清潔並重新插拔 PCIe 延長線  ',
+  '> **驗證結果**：已測試 9 小時飛行無異常（2025-10-26）  ',
+  '> **信心度**：95%（基於實測驗證）',
   '',
   '### 證據鏈（更新於 10/2）',
   '',
@@ -1231,11 +1231,11 @@ const INITIAL_MD_EN = [
   '',
   '## 🎯 Root Cause Analysis (Ongoing Updates)',
   '',
-  '> **Root Cause**: **Riser Hardware Composite Defect**  ',
-  '> - **Primary Issue** (85% probability): PCIe finger contact failure  ',
-  '> - **Secondary Issue** (100% confirmed): Gen4 signal quality degradation  ',
-  '> **Confidence Level**: 85% (based on Gen3 test results)  ',
-  '> **Recommended Solution**: Replace with Gen4-certified Riser (70% success probability)',
+  '> **Root Cause**: **PCIe Riser Oxidation Contact Issue**  ',
+  '> - **Issue Nature**: PCIe riser cable gold fingers oxidized, causing poor contact  ',
+  '> - **Solution**: Clean and reseat the PCIe riser cable  ',
+  '> **Verification**: Tested with 9 hours of stable flight operation (2025-10-26)  ',
+  '> **Confidence Level**: 95% (based on actual testing)',
   '',
   '### Evidence Chain (Updated 10/2)',
   '',
@@ -1759,6 +1759,21 @@ const TIMELINE_EVENTS = [
     type: 'milestone',
     icon: CheckCircle2
   },
+  {
+    date: '10/26',
+    title: '✅ 問題最終解決：PCIe 延長線氧化接觸不良',
+    content: '確認根本原因為 PCIe 延長線金手指氧化，清潔後測試 9 小時飛行完全正常。',
+    details: [
+      '🔍 根本原因：PCIe 延長線金手指氧化導致接觸不良',
+      '🛠️ 解決方法：清潔並重新插拔 PCIe 延長線',
+      '✅ 驗證結果：MSFS 2024 飛行測試 9 小時，完全無異常',
+      '📊 穩定度：暫停選單操作正常，無 GPU 消失問題',
+      '💡 關鍵發現：問題非 Gen4 訊號品質，而是物理接觸氧化',
+      '🎯 信心度：95%（基於 9 小時實測驗證）'
+    ],
+    type: 'milestone',
+    icon: CheckCircle2
+  },
 ];
 
 // English timeline events data
@@ -1967,6 +1982,21 @@ const TIMELINE_EVENTS_EN = [
       '✅ Evidence 5: GPU completely disappears from PCI tree',
       '🎯 Root cause: Lian Li Q58 Riser cannot stably support Gen4 long-term operation',
       '💡 Immediate solution: BIOS force PCIe Gen3 (zero cost, 98% success rate, <3% performance impact)'
+    ],
+    type: 'milestone',
+    icon: CheckCircle2
+  },
+  {
+    date: '10/26',
+    title: '✅ Final Resolution: PCIe Riser Oxidation Contact Issue',
+    content: 'Root cause confirmed as PCIe riser cable gold finger oxidation. After cleaning, 9 hours of flight testing showed complete stability.',
+    details: [
+      '🔍 Root Cause: PCIe riser cable gold fingers oxidized causing poor contact',
+      '🛠️ Solution: Clean and reseat the PCIe riser cable',
+      '✅ Verification: MSFS 2024 flight test for 9 hours with no anomalies',
+      '📊 Stability: Pause menu operations normal, no GPU disappearance issues',
+      '💡 Key Finding: Issue was not Gen4 signal quality, but physical contact oxidation',
+      '🎯 Confidence: 95% (based on 9 hours of verified testing)'
     ],
     type: 'milestone',
     icon: CheckCircle2
